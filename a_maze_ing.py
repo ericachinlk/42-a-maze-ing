@@ -66,7 +66,11 @@ def main() -> None:
 
     try:
         config = read_config(sys.argv[1])
-        maze = MazeGenerator(config["WIDTH"], config["HEIGHT"], config["SEED"])
+        maze = MazeGenerator(config["WIDTH"],
+                             config["HEIGHT"],
+                             config["ENTRY"],
+                             config["EXIT"],
+                             config["SEED"])
         maze.generate()
 
         # need to add this method in MazeGenerator

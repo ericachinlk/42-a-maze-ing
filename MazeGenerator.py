@@ -1,5 +1,5 @@
 import random
-
+from typing import Tuple
 
 N = 1  # North
 E = 2  # East
@@ -17,7 +17,12 @@ class MazeGenerator:
     bitwise encoding (N, E, S, W), allowing efficient storage
     and fast wall checks during generation and pathfinding.
     """
-    def __init__(self, width: int, height: int, seed: int) -> None:
+    def __init__(self,
+                 width: int,
+                 height: int,
+                 entry: Tuple[int, int],
+                 exit: Tuple[int, int],
+                 seed: int) -> None:
         """
         self.width, self.height store size of maze
         self.grid creates the maze
@@ -40,6 +45,8 @@ class MazeGenerator:
         """
         self.width = width
         self.height = height
+        self.entry = entry
+        self.exit = exit
         self.grid: list[list[int]] = []
 
         for _ in range(height):
@@ -118,8 +125,9 @@ class MazeGenerator:
                     # move to next cell and repeat
                     dfs(nx, ny)
 
-        # start running dfs from cell 0,0
-        dfs(0, 0)
+        # start running dfs from given start coordinates
+        start_x, start_y = self.entry
+        dfs(start_x, start_y)
 
     def to_hex(self) -> list[str]:
         """
