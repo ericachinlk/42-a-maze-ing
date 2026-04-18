@@ -3,6 +3,7 @@
 import sys
 from MazeGenerator import MazeGenerator
 from typing import Any
+from render import render_box
 
 """Note: need to add docstrings for all functions"""
 
@@ -78,6 +79,8 @@ def main() -> None:
             config["ENTRY"],
             config["EXIT"]
         )
+        render_box(config["OUTPUT_FILE"])
+
     except Exception as e:
         print(f"Error: {e}")
 
