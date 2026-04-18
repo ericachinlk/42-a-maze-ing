@@ -43,10 +43,21 @@ class MazeGenerator:
         if only S is closed - 0100 ~ 4
         if only W is closed - 1000 ~ 8
         """
+
+        if not (MazeGenerator.is_valid(entry[0], entry[1], width, height) and
+                MazeGenerator.is_valid(exit[0], exit[1], width, height)):
+            raise SystemExit(f"Error: Entry {entry} and exit {exit} coordinates are out of bounds"
+                             f" for maze of size {width}x{height}")
+
+        if entry == exit:
+            raise SystemExit("Error: Entry and exit coordinates are the same")
+
+        if width <= 0 or height <= 0:
+            raise SystemExit("Error: Width and height must be positive")
+
         self.width = width
         self.height = height
         self.entry = entry
-        self.exit = exit
         self.grid: list[list[int]] = []
 
         for _ in range(height):
@@ -145,3 +156,7 @@ class MazeGenerator:
                 line += hex_value
             lines.append(line)
         return lines
+
+    @staticmethod
+    def is_valid(x: int, y: int, width: int, height: int) -> bool:
+        return 0 <= x < width and 0 <= y < height
