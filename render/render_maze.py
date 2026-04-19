@@ -7,9 +7,12 @@ from typing import Dict
 V_WALL = "┃"
 H_WALL = "━━━"
 RESET = "\033[0m"
-GREEN = "\033[92m"
 RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+BLUE = "\033[94m"
 BOLD = "\033[1m"
+
 
 
 north, east, south, west = 1, 2, 4, 8
@@ -55,7 +58,7 @@ def get_corner(grid, x, y, width, height) -> Dict[str, bool]:
     return res.get((up, down, left, right), " ")
 
 
-def render_box(filepath: str) -> None:
+def render_box(filepath: str, color: str = "") -> None:
     if not os.path.exists(filepath):
         print(f"Error: {filepath} not found.")
         return
@@ -85,7 +88,7 @@ def render_box(filepath: str) -> None:
     for y in range(height + 1):
         line = ""
         for x in range(0, width + 1):
-            line += get_corner(grid, x, y, width, height)
+            line += f"{color}{get_corner(grid, x, y, width, height)}{RESET}"
             # Horizontal walls
             if x < width:
                 has_h = False
@@ -95,7 +98,7 @@ def render_box(filepath: str) -> None:
                     has_h = (grid[height - 1][x] & south) # Bottom row
                 else:
                     has_h = (grid[y - 1][x] & south) or (grid[y][x] & north) # Middle rows
-                line += H_WALL if has_h else "   "
+                line += f"{color}{H_WALL}{RESET}" if has_h else "   "
         output.append(line)
 
         if y < height:
@@ -109,7 +112,7 @@ def render_box(filepath: str) -> None:
                     has_v = (grid[y][width - 1] & east) # Right wall
                 else:
                     has_v = (grid[y][x - 1] & east) or (grid[y][x] & west) # Middle walls
-                line += V_WALL if has_v else " "
+                line += f"{color}{V_WALL}{RESET}" if has_v else " "
 
                 if x < width:
                     if (x, y) == start_pos:
@@ -125,4 +128,24 @@ def render_box(filepath: str) -> None:
 
 # Testing
 if __name__ == "__main__":
+    colors = [RED, GREEN, YELLOW, BLUE]
+    color_index = 0
     render_box("../maze.txt")
+    while True:
+        print("=== A-Maze-ing ===")
+        print("1. Regenerate new maze")
+        print("2. Show/hide path from entry to exit")
+        print("3. Rotate maze colours")
+        print("4. Quit")
+        choice = input("Choice? (1-4): ")
+        if choice == "1":
+            # TODO: Implement maze regeneration
+            pass
+        if choice == "2":
+            # TODO: Implement pathfinding
+            pass
+        if choice == "3":
+            render_box("../maze.txt", colors[color_index])
+            color_index = (color_index + 1) % len(colors)
+        if choice == "4":
+            break
