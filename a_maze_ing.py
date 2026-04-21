@@ -1,46 +1,11 @@
 #!/usr/bin/env python3
 
 import sys
-from MazeGenerator import MazeGenerator
-from typing import Any, Optional
-from render import render_box
+from typing import Optional
+from mazegen import MazeGenerator
+from app import read_config, render_box
 
 """Note: need to add docstrings for all functions"""
-
-
-def read_config(filename: str) -> dict[str, Any]:
-    raw: dict[str, str] = {}
-    try:
-        with open(filename, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if "=" not in line:
-                    raise ValueError(f"Invalid line: {line}")
-                key, value = line.split("=", 1)
-                raw[key.strip()] = value.strip()
-    except FileNotFoundError:
-        raise SystemExit("Error: Config file not found")
-
-    # Validate required fields
-    required = ["WIDTH", "HEIGHT", "ENTRY", "EXIT",
-                "OUTPUT_FILE", "PERFECT", "SEED"]
-    for key in required:
-        if key not in raw:
-            raise SystemExit(f"Missing required config: {key}")
-
-    # Convert types
-    config: dict[str, Any] = {
-        "WIDTH": int(raw["WIDTH"]),
-        "HEIGHT": int(raw["HEIGHT"]),
-        "ENTRY": tuple(map(int, raw["ENTRY"].split(","))),
-        "EXIT": tuple(map(int, raw["EXIT"].split(","))),
-        "OUTPUT_FILE": raw["OUTPUT_FILE"],
-        "PERFECT": raw["PERFECT"].lower() == "true",
-        "SEED": int(raw["SEED"])}
-    return config
-
 
 def generate_maze(config_file: str, seed: Optional[int] = None) -> str:
     config = read_config(config_file)
@@ -51,9 +16,10 @@ def generate_maze(config_file: str, seed: Optional[int] = None) -> str:
         config["HEIGHT"],
         config["ENTRY"],
         config["EXIT"],
-        seed_value
+        seed_value,
+        perfect=config["PERFECT"]
     )
-    maze.generate()
+    maze.generate(True)
 
     write_output(
         config["OUTPUT_FILE"],
@@ -68,7 +34,6 @@ def generate_maze(config_file: str, seed: Optional[int] = None) -> str:
 def write_output(
         filename: str, maze: MazeGenerator, entry: tuple, exit: tuple
 ) -> None:
-    maze.apply_42_pattern()
     path = maze.find_shortest_path()
 
     with open(filename, "w") as f:
