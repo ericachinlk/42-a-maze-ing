@@ -2,7 +2,7 @@
 
 import sys
 from MazeGenerator import MazeGenerator
-from typing import Any
+from typing import Any, Optional
 from render import render_box
 
 """Note: need to add docstrings for all functions"""
@@ -37,56 +37,95 @@ def read_config(filename: str) -> dict[str, Any]:
         "ENTRY": tuple(map(int, raw["ENTRY"].split(","))),
         "EXIT": tuple(map(int, raw["EXIT"].split(","))),
         "OUTPUT_FILE": raw["OUTPUT_FILE"],
-        "PERFECT": raw["PERFECT"] == "True",
+        "PERFECT": raw["PERFECT"].lower() == "true",
         "SEED": int(raw["SEED"])}
     return config
 
 
+def generate_maze(config_file: str, seed: Optional[int] = None) -> str:
+    config = read_config(config_file)
+    seed_value = seed if seed is not None else config["SEED"]
+
+    maze = MazeGenerator(
+        config["WIDTH"],
+        config["HEIGHT"],
+        config["ENTRY"],
+        config["EXIT"],
+        seed_value
+    )
+    maze.generate()
+
+    write_output(
+        config["OUTPUT_FILE"],
+        maze,
+        config["ENTRY"],
+        config["EXIT"]
+    )
+
+    return config["OUTPUT_FILE"]
+
+
 def write_output(
-        filename: str, maze: MazeGenerator, entry: tuple, exit_: tuple
+        filename: str, maze: MazeGenerator, entry: tuple, exit: tuple
 ) -> None:
+    maze.apply_42_pattern()
+    path = maze.find_shortest_path()
+
     with open(filename, "w") as f:
         for line in maze.to_hex():
             f.write(line + "\n")
 
         f.write("\n")
-
-        # need add this method in MazeGenerator
-        # path = maze.find_path(entry, exit_)
-
         f.write(f"{entry}\n")
-        f.write(f"{exit_}\n")
-        # f.write(f"{path}\n")
+        f.write(f"{exit}\n")
+        f.write(f"{path}\n")
+
+
+# ANSI escape sequences for color
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+BLUE = "\033[94m"
 
 
 def main() -> None:
     if len(sys.argv) != 2:
         print("Usage: python3 a_maze_ing.py config.txt")
         return
+    config_file = sys.argv[1]
 
-    try:
-        config = read_config(sys.argv[1])
-        maze = MazeGenerator(config["WIDTH"],
-                             config["HEIGHT"],
-                             config["ENTRY"],
-                             config["EXIT"],
-                             config["SEED"])
-        maze.generate()
+    colors = [RED, GREEN, YELLOW, BLUE]
+    color_index = 0
+    show_path = False
 
-        # need to add this method in MazeGenerator
-        # if not config["PERFECT"]:
-        #     maze.add_loops()
+    output = generate_maze(config_file)
+    current_color = colors[color_index]
+    render_box(output, current_color, show_path=show_path)
 
-        write_output(
-            config["OUTPUT_FILE"],
-            maze,
-            config["ENTRY"],
-            config["EXIT"]
-        )
-        render_box(config["OUTPUT_FILE"])
+    while True:
+        print("=== A-Maze-ing ===")
+        print("1. Regenerate new maze")
+        print("2. Show/hide path from entry to exit")
+        print("3. Rotate maze colours")
+        print("4. Quit")
+        choice = input("Choice? (1-4): ")
+        if choice == "1":
+            import random
 
-    except Exception as e:
-        print(f"Error: {e}")
+            output = generate_maze(config_file, seed=random.randint(1, 1000))
+            render_box(output, current_color, show_path=show_path)
+
+        elif choice == "2":
+            show_path = not show_path
+            render_box(output, current_color, show_path=show_path)
+
+        elif choice == "3":
+            color_index = (color_index + 1) % len(colors)
+            current_color = colors[color_index]
+            render_box(output, current_color, show_path=show_path)
+
+        elif choice == "4":
+            break
 
 
 if __name__ == "__main__":

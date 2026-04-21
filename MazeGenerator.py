@@ -1,5 +1,6 @@
 import random
-from typing import Tuple
+from collections import deque
+
 
 N = 1  # North
 E = 2  # East
@@ -17,12 +18,14 @@ class MazeGenerator:
     bitwise encoding (N, E, S, W), allowing efficient storage
     and fast wall checks during generation and pathfinding.
     """
-    def __init__(self,
-                 width: int,
-                 height: int,
-                 entry: Tuple[int, int],
-                 exit: Tuple[int, int],
-                 seed: int) -> None:
+    def __init__(
+            self,
+            width: int,
+            height: int,
+            entry: tuple[int],
+            exit: tuple[int],
+            seed: int
+    ) -> None:
         """
         self.width, self.height store size of maze
         self.grid creates the maze
@@ -44,8 +47,8 @@ class MazeGenerator:
         if only W is closed - 1000 ~ 8
         """
 
-        if not (MazeGenerator.is_valid(entry[0], entry[1], width, height) and
-                MazeGenerator.is_valid(exit[0], exit[1], width, height)):
+        if not (self.is_valid(entry[0], entry[1], width, height) and
+                self.is_valid(exit[0], exit[1], width, height)):
             raise SystemExit(f"Error: Entry {entry} and exit {exit} coordinates are out of bounds"
                              f" for maze of size {width}x{height}")
 
@@ -54,10 +57,11 @@ class MazeGenerator:
 
         if width <= 0 or height <= 0:
             raise SystemExit("Error: Width and height must be positive")
-
+        
         self.width = width
         self.height = height
         self.entry = entry
+        self.exit = exit
         self.grid: list[list[int]] = []
 
         for _ in range(height):
@@ -160,3 +164,96 @@ class MazeGenerator:
     @staticmethod
     def is_valid(x: int, y: int, width: int, height: int) -> bool:
         return 0 <= x < width and 0 <= y < height
+    
+    def apply_42_pattern(self) -> None:
+        """
+        Draws a '42' using fully closed cells (value = 15)
+        """
+
+        # minimum size check
+        if self.width < 6 or self.height < 5:
+            print("Warning: Maze too small for '42' pattern")
+            return
+
+        # starting position (top-left offset)
+        start_x = self.width // 4
+        start_y = self.height // 3
+
+        # --- DRAW "4" ---
+        four_coords = [
+            (0, 0), (0, 1), (0, 2),        # left vertical
+            (1, 2),                        # middle bar
+            (2, 0), (2, 1), (2, 2), (2, 3) # right vertical
+        ]
+
+        # --- DRAW "2" ---
+        two_coords = [
+            (4, 0), (5, 0), (6, 0),        # top
+            (6, 1),
+            (4, 2), (5, 2), (6, 2),        # middle
+            (4, 3),
+            (4, 4), (5, 4), (6, 4)         # bottom
+        ]
+
+        # helper to safely close a cell
+        def close_cell(x, y):
+            if (x, y) == self.entry or (x, y) == self.exit:
+                return
+
+            self.grid[y][x] = 15
+
+            # fix neighbors
+            neighbors = [
+                (0, -1, N, S),
+                (1, 0, E, W),
+                (0, 1, S, N),
+                (-1, 0, W, E)
+            ]
+
+            for dx, dy, wall, opposite in neighbors:
+                nx, ny = x + dx, y + dy
+
+                if 0 <= nx < self.width and 0 <= ny < self.height:
+                    self.grid[ny][nx] |= opposite  # ensure neighbor has matching wall
+
+    def find_shortest_path(self) -> str:
+        """
+        Returns the shortest path from entry to exit
+        as a string of N,E,S,W
+        """
+
+        directions = [
+            (0, -1, N, "N"),
+            (1, 0, E, "E"),
+            (0, 1, S, "S"),
+            (-1, 0, W, "W")
+        ]
+
+        queue = deque()
+        queue.append((self.entry[0], self.entry[1], ""))
+
+        visited = set()
+        visited.add(self.entry)
+
+        while queue:
+            x, y, path = queue.popleft()
+
+            if (x, y) == self.exit:
+                return path
+
+            for dx, dy, wall, letter in directions:
+                nx, ny = x + dx, y + dy
+
+                # check bounds
+                if not (0 <= nx < self.width and 0 <= ny < self.height):
+                    continue
+
+                # check if wall is OPEN (bit = 0)
+                if self.grid[y][x] & wall != 0:
+                    continue
+
+                if (nx, ny) not in visited:
+                    visited.add((nx, ny))
+                    queue.append((nx, ny, path + letter))
+
+        return ""  # should never happen if maze is valid
