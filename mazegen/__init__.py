@@ -1,3 +1,3 @@
-from MazeGenerator import MazeGenerator
+from .MazeGenerator import MazeGenerator
 
 __all__ = ["MazeGenerator"]

@@ -7,7 +7,9 @@ from app import read_config, render_box
 
 """Note: need to add docstrings for all functions"""
 
-def generate_maze(config_file: str, seed: Optional[int] = None) -> str:
+def generate_maze(config_file: str,
+                  color: str = "",
+                  seed: Optional[int] = None) -> str:
     config = read_config(config_file)
     seed_value = seed if seed is not None else config["SEED"]
 
@@ -19,7 +21,7 @@ def generate_maze(config_file: str, seed: Optional[int] = None) -> str:
         seed_value,
         perfect=config["PERFECT"]
     )
-    maze.generate(True)
+    maze.generate(config, color, True)
 
     write_output(
         config["OUTPUT_FILE"],
@@ -47,6 +49,7 @@ def write_output(
 
 
 # ANSI escape sequences for color
+WHITE = "\033[097m"
 RED = "\033[91m"
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
@@ -59,12 +62,12 @@ def main() -> None:
         return
     config_file = sys.argv[1]
 
-    colors = [RED, GREEN, YELLOW, BLUE]
+    colors = [WHITE, RED, GREEN, YELLOW, BLUE]
     color_index = 0
     show_path = False
 
-    output = generate_maze(config_file)
     current_color = colors[color_index]
+    output = generate_maze(config_file, current_color)
     render_box(output, current_color, show_path=show_path)
 
     while True:
@@ -77,7 +80,7 @@ def main() -> None:
         if choice == "1":
             import random
 
-            output = generate_maze(config_file, seed=random.randint(1, 1000))
+            output = generate_maze(config_file, current_color, seed=random.randint(1, 1000))
             render_box(output, current_color, show_path=show_path)
 
         elif choice == "2":
