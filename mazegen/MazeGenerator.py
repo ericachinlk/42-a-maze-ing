@@ -1,6 +1,6 @@
 import random
 from collections import deque
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 # Bitmask directions
 N, E, S, W = 1, 2, 4, 8
@@ -96,12 +96,15 @@ class MazeGenerator:
                 self.grid[py][px] = 15
                 visited[py][px] = True
 
-    def generate(self, use_pattern: bool = False) -> None:
+    def generate(self, config: dict[str, Any],
+                 color: str,
+                 use_pattern: bool = False) -> None:
         """
         The function starts at one cell, randomly moves around,
         removing walls to create paths.
         """
         visited: list[list[bool]] = []
+        from render import pre_render
 
         for _ in range(self.height):
             row = []
@@ -112,6 +115,7 @@ class MazeGenerator:
         # Apply pattern and mark as visited so DFS goes AROUND them
         if use_pattern:
             self.apply_42_pattern(visited)
+
 
         def dfs(x: int, y: int) -> None:
             """
@@ -164,11 +168,15 @@ class MazeGenerator:
                 ):
                     self.grid[y][x] ^= wall
                     self.grid[ny][nx] ^= opposite
+ 
+                    pre_render(config, self, color)
 
                     # move to next cell and repeat
                     dfs(nx, ny)
 
         # start running dfs from given start coordinates
+        
+        
         start_x, start_y = self.entry
         dfs(start_x, start_y)
 

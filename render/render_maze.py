@@ -23,11 +23,11 @@ def get_corner(grid, x, y, width, height) -> Dict[str, bool]:
     Intersection at Top-Left of cell (x, y).
     Checks 4 adjacent cells to see which walls meet at this point.
     """
-    # Checks corners of cell (x, y)
-    nw = grid[y - 1][x - 1] if y > 0 and x > 0 else 0
-    ne = grid[y - 1][x] if y > 0 and x < width else 0
-    sw = grid[y][x - 1] if y < height and x > 0 else 0
-    se = grid[y][x] if y < height and x < width else 0
+    # Checks corners of cell (x, y) # (0, 0)
+    nw = grid[y - 1][x - 1] if y > 0 and x > 0 else 0 # nw = 0
+    ne = grid[y - 1][x] if y > 0 and x < width else 0 # ne = 0
+    sw = grid[y][x - 1] if y < height and x > 0 else 0 # sw = 0
+    se = grid[y][x] if y < height and x < width else 0 # sw = 9
 
     # Wall exists if statement resolves to TRUE
     up = bool((nw & east) or (ne & west))  # East of nw or West of ne
@@ -154,6 +154,11 @@ def render_box(filepath: str, color: str = "", show_path: bool = False) -> None:
             output.append(line)
 
     print("\n".join(output))
+
+    import time
+    time.sleep(0.05)
+
+    os.system("clear")
 
 # def render_box(filepath: str, color: str = "") -> None:
 #     if not os.path.exists(filepath):
