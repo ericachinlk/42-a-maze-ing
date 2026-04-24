@@ -207,10 +207,10 @@ class MazeGenerator:
         # start running dfs from given start coordinates
         start_x, start_y = self.entry
         dfs(start_x, start_y)
+        import os
+        os.system('clear')
 
     def _generate_prim(self, visited: list[list[bool]], config, color) -> None:
-        from app import pre_render
-
         start_x, start_y = self.entry
         visited[start_y][start_x] = True
         walls: list[tuple[int, int, int, int, int, int]] = []

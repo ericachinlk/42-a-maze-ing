@@ -38,7 +38,7 @@ def generate_maze(
 
 
 def display_maze(file, color, show_path, final):
-    # print("\033[2J\033[H", end="")
+    print("\033[2J\033[H", end="")
     print(render_box(file, color, show_path=show_path, final=True))
 
 
