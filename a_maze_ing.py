@@ -56,6 +56,7 @@ RED = "\033[91m"
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
 BLUE = "\033[94m"
+WHITE = "\033[37m"
 
 
 def main() -> None:
@@ -64,13 +65,13 @@ def main() -> None:
         return
     config_file = sys.argv[1]
 
-    colors = [RED, GREEN, YELLOW, BLUE]
+    colors = [WHITE, RED, GREEN, YELLOW, BLUE]
     color_index = 0
     show_path = False
 
     output = generate_maze(config_file, colors[color_index])
     current_color = colors[color_index]
-    render_box(output, current_color, show_path=show_path)
+    print(render_box(output, current_color, show_path=show_path, final=True))
 
     while True:
         print("=== A-Maze-ing ===")
@@ -82,17 +83,17 @@ def main() -> None:
         if choice == "1":
             import random
 
-            output = generate_maze(config_file, seed=random.randint(1, 1000))
-            render_box(output, current_color, show_path=show_path)
+            output = generate_maze(config_file, colors[color_index],seed=random.randint(1, 1000))
+            print(render_box(output, current_color, show_path=show_path, final=True))
 
         elif choice == "2":
             show_path = not show_path
-            render_box(output, current_color, show_path=show_path)
+            print(render_box(output, current_color, show_path=show_path, final=True))
 
         elif choice == "3":
             color_index = (color_index + 1) % len(colors)
             current_color = colors[color_index]
-            render_box(output, current_color, show_path=show_path)
+            print(render_box(output, current_color, show_path=show_path, final=True))
 
         elif choice == "4":
             break

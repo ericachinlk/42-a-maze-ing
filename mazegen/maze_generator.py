@@ -23,7 +23,7 @@ class MazeGenerator:
             entry: tuple[int, int],
             exit: tuple[int, int],
             seed: int,
-            perfect: bool = True
+            perfect: bool
     ) -> None:
         """
         self.width, self.height store size of maze

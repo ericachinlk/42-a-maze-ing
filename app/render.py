@@ -5,6 +5,7 @@ from typing import Dict
 # Box Drawing Characters
 V_WALL = "┃"
 H_WALL = "━━━"
+D_GREEN = "\033[42m"
 RESET = "\033[0m"
 RED = "\033[91m"
 GREEN = "\033[92m"
@@ -15,7 +16,7 @@ BOLD = "\033[1m"
 north, east, south, west = 1, 2, 4, 8
 
 
-def get_corner(grid, x, y, width, height) -> str:
+def get_corner(grid, x, y, width, height, final: bool = False) -> str:
     """
     Intersection at Top-Left of cell (x, y).
     Checks 4 adjacent cells to see which walls meet at this point.
@@ -55,7 +56,7 @@ def get_corner(grid, x, y, width, height) -> str:
     return res.get((up, down, left, right), " ")
 
 
-def render_box(filepath: str, color: str = "", show_path: bool = False) -> None:
+def render_box(filepath: str, color: str = "", show_path: bool = False, final: bool = False) -> None:
     if not os.path.exists(filepath):
         print(f"Error: {filepath} not found.")
         return
@@ -146,6 +147,8 @@ def render_box(filepath: str, color: str = "", show_path: bool = False) -> None:
                         line += f" {BOLD}{RED}G{RESET} "
                     elif (x, y) in path_cells:
                         line += f" {BOLD}{YELLOW}•{RESET} "
+                    elif grid[y][x] == 15 and final:
+                        line += f"{BOLD}\033[107m   {RESET}"
                     else:
                         line += "   "
             output.append(line)

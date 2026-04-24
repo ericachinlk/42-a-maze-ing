@@ -18,7 +18,7 @@ def pre_render(config: Dict[str, Any],
     )
 
     
-    output = render_box(config["OUTPUT_FILE"], color)
+    output = render_box(config["OUTPUT_FILE"], color, False)
     os.system('clear')
     print(output)
     time.sleep(0.03)
