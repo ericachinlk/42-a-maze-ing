@@ -1,5 +1,4 @@
 import random
-import os
 from collections import deque
 from typing import Any
 
@@ -23,7 +22,9 @@ class MazeGenerator:
             entry: tuple[int, int],
             exit: tuple[int, int],
             seed: int,
-            perfect: bool
+            perfect: bool,
+            algorithm: str,
+            display: str
     ) -> None:
         """
         self.width, self.height store size of maze
@@ -51,9 +52,11 @@ class MazeGenerator:
         self.exit = exit
         self.seed = seed
         self.perfect = perfect
+        self.algorithm = algorithm
+        self.display = display
         self.pattern_cells: set = set()
 
-        random.seed(seed)
+        self.rng = random.Random(seed)
 
         # Initialize grid (all walls closed = 15)
         self.grid: list[list[int]] = []
@@ -106,7 +109,6 @@ class MazeGenerator:
 
     def generate(
             self,
-            algorithm: str,
             config: dict[str, Any],
             color: str,
             use_pattern: bool = False
@@ -131,9 +133,9 @@ class MazeGenerator:
         if use_pattern:
             self.apply_42_pattern(visited)
 
-        if algorithm == "dfs":
+        if self.algorithm == "dfs":
             self._generate_dfs(visited, config, color)
-        elif algorithm == "prim":
+        elif self.algorithm == "prim":
             self._generate_prim(visited, config, color)
 
         # handle PERFECT=False (multiple paths instead of just one)
@@ -175,13 +177,11 @@ class MazeGenerator:
             Eventually everything is visited.
             So when dfs fully done, all visited[y][x] = True
             """
-            from app import pre_render
-
             visited[y][x] = True
 
             directions = [
                 (0, -1, N, S), (1, 0, E, W), (0, 1, S, N), (-1, 0, W, E)]
-            random.shuffle(directions)
+            self.rng.shuffle(directions)
 
             for dx, dy, wall, opposite in directions:
                 nx, ny = x + dx, y + dy
@@ -196,9 +196,10 @@ class MazeGenerator:
                 ):
                     self.grid[y][x] ^= wall
                     self.grid[ny][nx] ^= opposite
-
-                    pre_render(config, self, color)
-                    os.system('clear')
+                    
+                    if self.display == "animated":
+                        from app import pre_render
+                        pre_render(config, self, color)
 
                     # move to next cell and repeat
                     dfs(nx, ny)
@@ -230,14 +231,15 @@ class MazeGenerator:
 
         add_walls(start_x, start_y)
         while walls:
-            idx = random.randint(0, len(walls) - 1)
+            idx = self.rng.randint(0, len(walls) - 1)
             x, y, nx, ny, wall, opposite = walls.pop(idx)
             if not visited[ny][nx]:
                 self.grid[y][x] ^= wall
                 self.grid[ny][nx] ^= opposite
 
-                pre_render(config, self, color)
-                os.system('clear')
+                if self.display == "animated":
+                    from app import pre_render
+                    pre_render(config, self, color)
 
                 visited[ny][nx] = True
                 add_walls(nx, ny)
@@ -255,8 +257,8 @@ class MazeGenerator:
         while removed < extra_removals and attempts < 1000:
             attempts += 1
             # pick a random cell not on the edges
-            x = random.randint(1, self.width - 2)
-            y = random.randint(1, self.height - 2)
+            x = self.rng.randint(1, self.width - 2)
+            y = self.rng.randint(1, self.height - 2)
 
             # skip cells if they are the '42' pattern cells
             if (x, y) in self.pattern_cells:
@@ -265,7 +267,7 @@ class MazeGenerator:
             # Pick a wall to remove (East or South)
             # e.g. (E, W, 1, 0) means removing E wall, W wall of opposite cell
             # and move to the right
-            wall, opp, dx, dy = random.choice([(E, W, 1, 0), (S, N, 0, 1)])
+            wall, opp, dx, dy = self.rng.choice([(E, W, 1, 0), (S, N, 0, 1)])
 
             # skip cells if the neighbouring cells are the '42' pattern cells
             nx, ny = x + dx, y + dy

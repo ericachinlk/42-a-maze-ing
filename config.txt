@@ -1,14 +1,14 @@
 # Maze with (number of cells)
-WIDTH=20
+WIDTH=10
 
 # Maze height
-HEIGHT=15
+HEIGHT=10
 
 # Entry coordinates(x,y)
 ENTRY=0,0
 
 # Exit coordinates(x,y)
-EXIT=19,14
+EXIT=9,7
 
 # Output filename
 OUTPUT_FILE=maze.txt
@@ -18,4 +18,7 @@ PERFECT=True
 
 SEED=42
 
-ALGORITHM=prim
+ALGORITHM=dfs
+
+DISPLAY=animated
+

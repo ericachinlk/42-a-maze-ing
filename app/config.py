@@ -17,6 +17,8 @@ def parse_tuple(value: str, name: str) -> tuple[int, int]:
 
 
 def parse_bool(value: str, name: str) -> bool:
+    if not value:
+        return True
     val = value.lower()
     if val in ("true", "1", "yes"):
         return True
@@ -25,7 +27,16 @@ def parse_bool(value: str, name: str) -> bool:
     raise SystemExit(f"{name} must be true/false")
 
 
-def parse_algo(value: str, name: str) -> str:
+def parse_seed(value: Any, name: str) -> Any:
+    if not value:
+        return value
+    else:
+        return parse_int(value, name)
+
+
+def parse_algo(value: Any, name: str) -> str:
+    if not value:
+        return "dfs"
     val = value.lower()
     if val == "dfs" or val == "prim":
         return val
@@ -33,7 +44,24 @@ def parse_algo(value: str, name: str) -> str:
         raise SystemExit(f"{name} must be dfs or prim")
 
 
-def read_config(filename: str) -> dict[str, Any]:
+def parse_display(value: Any, name: str) -> str:
+    if not value:
+        return "animated"
+    val = value.lower()
+    if val == "static" or val == "animated":
+        return val
+    else:
+        raise SystemExit(f"{name} must be static or animated")
+
+
+def parse_output(value: str, name: str) -> str:
+    if not value.endswith(".txt"):
+        raise SystemExit(f"{name} must be a txt file")
+    else:
+        return value
+
+
+def file_validator(filename: str) -> dict[str, str]:
     raw: dict[str, str] = {}
     try:
         with open(filename, "r") as f:
@@ -44,24 +72,30 @@ def read_config(filename: str) -> dict[str, Any]:
                 if "=" not in line:
                     raise SystemExit(f"Invalid line (missing '='): {line}")
                 key, value = line.split("=", 1)
-                raw[key.strip()] = value.strip()
+                raw[key.strip().upper()] = value.strip()
     except FileNotFoundError:
         raise SystemExit("Error: Config file not found")
 
     required = ["WIDTH", "HEIGHT", "ENTRY", "EXIT",
-                "OUTPUT_FILE", "PERFECT", "SEED", "ALGORITHM"]
+                "OUTPUT_FILE", "PERFECT"]
     for key in required:
         if key not in raw:
             raise SystemExit(f"Missing required config: {key}")
+    return raw
+
+
+def read_config(filename: str) -> dict[str, Any]:
+    raw = file_validator(filename)
 
     width = parse_int(raw["WIDTH"], "WIDTH")
     height = parse_int(raw["HEIGHT"], "HEIGHT")
     entry = parse_tuple(raw["ENTRY"], "ENTRY")
     exit = parse_tuple(raw["EXIT"], "EXIT")
-    seed = parse_int(raw["SEED"], "SEED")
     perfect = parse_bool(raw["PERFECT"], "PERFECT")
-    algorithm = parse_algo(raw["ALGORITHM"], "ALGORITHM")
-    output_file = raw["OUTPUT_FILE"]
+    seed = parse_seed(raw.get("SEED"), "SEED")
+    algorithm = parse_algo(raw.get("ALGORITHM"), "ALGORITHM")
+    display = parse_display(raw.get("DISPLAY"), "DISPLAY")
+    output_file = parse_output(raw["OUTPUT_FILE"], "OUTPUT FILE")
 
     # validation for valid maze
     if width <= 0 or height <= 0:
@@ -84,5 +118,64 @@ def read_config(filename: str) -> dict[str, Any]:
         "OUTPUT_FILE": output_file,
         "PERFECT": perfect,
         "SEED": seed,
-        "ALGORITHM": algorithm
+        "ALGORITHM": algorithm,
+        "DISPLAY": display
     }
+
+
+def show_config(filename: str):
+    config = read_config(filename)
+    print("\n=== CONFIG ===")
+    for k, v in config.items():
+        print(f"{k}: {v}")
+
+
+def set_config(filename: str, key: str, value: str):
+    raw = file_validator(filename)
+    key = key.upper()
+    if key in raw.keys():
+        lines = []
+        with open(filename, "r") as f:
+            for line in f:
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    if k.strip() == key:
+                        lines.append(f"{key}={value}\n")
+                    else:
+                        lines.append(line)
+                else:
+                    lines.append(line)
+
+        with open(filename, "w") as f:
+            f.writelines(lines)
+        print(f"{key} updated to {value}")
+    else:
+        print(f"{key} is not found.")
+
+
+if __name__ == "__main__":
+    import sys
+
+    args = sys.argv[1:]
+
+    if not args:
+        print("Commands:")
+        print("  show")
+        print("  set KEY VALUE")
+        sys.exit(1)
+
+    command = args[0]
+    config_file = "../config.txt"
+
+    if command == "show":
+        show_config(config_file)
+    elif command == "set":
+        if len(args) != 3:
+            print("Usage: set KEY VALUE")
+            sys.exit(1)
+        key = args[1]
+        value = args[2]
+        set_config(config_file, key, value)
+        show_config(config_file)
+    else:
+        print("Unknown command:", command)

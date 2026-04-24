@@ -1,54 +1,9 @@
 #!/usr/bin/env python3
 
 import sys
-from typing import Optional
-from mazegen import MazeGenerator
-from app import read_config, render_box
+from app import read_config, generate_maze, display_maze, show_config, set_config
 
 """Note: need to add docstrings for all functions"""
-
-
-def generate_maze(
-        config_file: str,
-        color: str = "",
-        seed: Optional[int] = None
-) -> str:
-    config = read_config(config_file)
-    seed_value = seed if seed is not None else config["SEED"]
-
-    maze = MazeGenerator(
-        config["WIDTH"],
-        config["HEIGHT"],
-        config["ENTRY"],
-        config["EXIT"],
-        seed_value,
-        perfect=config["PERFECT"]
-    )
-    maze.generate(config["ALGORITHM"], config, color, True)
-
-    write_output(
-        config["OUTPUT_FILE"],
-        maze,
-        config["ENTRY"],
-        config["EXIT"]
-    )
-
-    return config["OUTPUT_FILE"]
-
-
-def write_output(
-        filename: str, maze: MazeGenerator, entry: tuple, exit: tuple
-) -> None:
-    path = maze.find_shortest_path()
-
-    with open(filename, "w") as f:
-        for line in maze.to_hex():
-            f.write(line + "\n")
-
-        f.write("\n")
-        f.write(f"{entry}\n")
-        f.write(f"{exit}\n")
-        f.write(f"{path}\n")
 
 
 # ANSI escape sequences for color
@@ -68,34 +23,51 @@ def main() -> None:
     colors = [WHITE, RED, GREEN, YELLOW, BLUE]
     color_index = 0
     show_path = False
-
-    output = generate_maze(config_file, colors[color_index])
     current_color = colors[color_index]
-    print(render_box(output, current_color, show_path=show_path, final=True))
+    config = read_config(config_file)
+    output = generate_maze(config_file, current_color)
+
+    if config["DISPLAY"] == "static":
+        display_maze(output, current_color, show_path, True)
 
     while True:
         print("=== A-Maze-ing ===")
         print("1. Regenerate new maze")
         print("2. Show/hide path from entry to exit")
         print("3. Rotate maze colours")
-        print("4. Quit")
-        choice = input("Choice? (1-4): ")
+        print("4. Display current configurations")
+        print("5. Modify configurations")
+        print("6. Quit")
+        choice = input("Choice? (1-6): ")
         if choice == "1":
             import random
 
-            output = generate_maze(config_file, colors[color_index],seed=random.randint(1, 1000))
-            print(render_box(output, current_color, show_path=show_path, final=True))
+            output = generate_maze(config_file, seed=random.randint(1, 1000))
+            display_maze(output, current_color, show_path, True)
 
         elif choice == "2":
             show_path = not show_path
-            print(render_box(output, current_color, show_path=show_path, final=True))
+            display_maze(output, current_color, show_path, True)
 
         elif choice == "3":
             color_index = (color_index + 1) % len(colors)
             current_color = colors[color_index]
-            print(render_box(output, current_color, show_path=show_path, final=True))
-
+            display_maze(output, current_color, show_path, True)
+        
         elif choice == "4":
+            show_config("../config.txt")
+        
+        # this is not working as it should... it keeps saying cannot find the keyword, will fix
+        elif choice == "5":
+            mod = input("Usage: KEY VALUE, e.g. 'ALGORITHM prim': ").split()
+            if len(mod) != 2:
+                print("Usage: KEY VALUE")
+                sys.exit(1)
+            key = mod[0]
+            value = mod[1]
+            set_config("../config.txt", key, value)
+
+        elif choice == "6":
             break
 
 
