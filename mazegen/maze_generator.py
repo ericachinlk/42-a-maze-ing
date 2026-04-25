@@ -1,6 +1,7 @@
 import random
 from collections import deque
 from typing import Any
+from app import render_box
 
 # Bitmask directions
 N, E, S, W = 1, 2, 4, 8
@@ -23,8 +24,7 @@ class MazeGenerator:
             exit: tuple[int, int],
             seed: int,
             perfect: bool,
-            algorithm: str,
-            display: str
+            algorithm: str
     ) -> None:
         """
         self.width, self.height store size of maze
@@ -53,7 +53,6 @@ class MazeGenerator:
         self.seed = seed
         self.perfect = perfect
         self.algorithm = algorithm
-        self.display = display
         self.pattern_cells: set = set()
 
         self.rng = random.Random(seed)
@@ -142,6 +141,11 @@ class MazeGenerator:
         if not self.perfect:
             self._add_loops()
 
+        # final frame ONLY ONCE
+        output = render_box(config["OUTPUT_FILE"], color, final=True)
+        print("\033[H", end="")
+        print(output)
+
     def _generate_dfs(self, visited: list[list[bool]], config, color) -> None:
         def dfs(x: int, y: int) -> None:
             """
@@ -197,9 +201,8 @@ class MazeGenerator:
                     self.grid[y][x] ^= wall
                     self.grid[ny][nx] ^= opposite
                     
-                    if self.display == "animated":
-                        from app import pre_render
-                        pre_render(config, self, color)
+                    from app import pre_render
+                    pre_render(config, self, color)
 
                     # move to next cell and repeat
                     dfs(nx, ny)
@@ -207,8 +210,9 @@ class MazeGenerator:
         # start running dfs from given start coordinates
         start_x, start_y = self.entry
         dfs(start_x, start_y)
-        import os
-        os.system('clear')
+        # import os
+        # os.system('clear')
+
 
     def _generate_prim(self, visited: list[list[bool]], config, color) -> None:
         start_x, start_y = self.entry
@@ -237,9 +241,8 @@ class MazeGenerator:
                 self.grid[y][x] ^= wall
                 self.grid[ny][nx] ^= opposite
 
-                if self.display == "animated":
-                    from app import pre_render
-                    pre_render(config, self, color)
+                from app import pre_render
+                pre_render(config, self, color)
 
                 visited[ny][nx] = True
                 add_walls(nx, ny)

@@ -1,8 +1,8 @@
 # Maze with (number of cells)
-WIDTH=20
+WIDTH=10
 
 # Maze height
-HEIGHT=15
+HEIGHT=10
 
 # Entry coordinates(x,y)
 ENTRY=0,0
@@ -19,6 +19,4 @@ PERFECT=True
 SEED=42
 
 ALGORITHM=dfs
-
-DISPLAY=animated
 

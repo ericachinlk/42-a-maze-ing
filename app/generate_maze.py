@@ -11,9 +11,7 @@ def generate_maze(
     config = read_config(config_file)
     seed_value = seed if seed is not None else config["SEED"]
 
-    # clear screen ONCE if animated
-    if config["DISPLAY"] == "animated":
-        print("\033[2J", end="")
+    print("\033[2J\033[H", end="")
 
     maze = MazeGenerator(
         config["WIDTH"],
@@ -22,10 +20,9 @@ def generate_maze(
         config["EXIT"],
         seed_value,
         config["PERFECT"],
-        config["ALGORITHM"],
-        config["DISPLAY"]
+        config["ALGORITHM"]
     )
-    maze.generate(config, color, True)
+    maze.generate(config, color, use_pattern=True)
 
     write_output(
         config["OUTPUT_FILE"],
@@ -37,7 +34,7 @@ def generate_maze(
     return config["OUTPUT_FILE"]
 
 
-def display_maze(file, color, show_path, final):
+def display_maze(file, color, show_path):
     print("\033[2J\033[H", end="")
     print(render_box(file, color, show_path=show_path, final=True))
 
@@ -55,4 +52,3 @@ def write_output(
         f.write(f"{entry}\n")
         f.write(f"{exit}\n")
         f.write(f"{path}\n")
-

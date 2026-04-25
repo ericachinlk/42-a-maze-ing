@@ -44,16 +44,6 @@ def parse_algo(value: Any, name: str) -> str:
         raise SystemExit(f"{name} must be dfs or prim")
 
 
-def parse_display(value: Any, name: str) -> str:
-    if not value:
-        return "animated"
-    val = value.lower()
-    if val == "static" or val == "animated":
-        return val
-    else:
-        raise SystemExit(f"{name} must be static or animated")
-
-
 def parse_output(value: str, name: str) -> str:
     if not value.endswith(".txt"):
         raise SystemExit(f"{name} must be a txt file")
@@ -94,7 +84,6 @@ def read_config(filename: str) -> dict[str, Any]:
     perfect = parse_bool(raw["PERFECT"], "PERFECT")
     seed = parse_seed(raw.get("SEED"), "SEED")
     algorithm = parse_algo(raw.get("ALGORITHM"), "ALGORITHM")
-    display = parse_display(raw.get("DISPLAY"), "DISPLAY")
     output_file = parse_output(raw["OUTPUT_FILE"], "OUTPUT FILE")
 
     # validation for valid maze
@@ -118,8 +107,7 @@ def read_config(filename: str) -> dict[str, Any]:
         "OUTPUT_FILE": output_file,
         "PERFECT": perfect,
         "SEED": seed,
-        "ALGORITHM": algorithm,
-        "DISPLAY": display
+        "ALGORITHM": algorithm
     }
 
 

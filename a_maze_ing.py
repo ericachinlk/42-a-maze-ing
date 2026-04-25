@@ -24,11 +24,7 @@ def main() -> None:
     color_index = 0
     show_path = False
     current_color = colors[color_index]
-    config = read_config(config_file)
     output = generate_maze(config_file, current_color)
-
-    # if config["DISPLAY"] == "static":
-    display_maze(output, current_color, show_path, True)
 
     while True:
         print("=== A-Maze-ing ===")
@@ -43,19 +39,15 @@ def main() -> None:
             import random
 
             output = generate_maze(config_file, current_color, seed=random.randint(1, 1000))
-            # if config["DISPLAY"] == "static":
-            display_maze(output, current_color, show_path, True)
 
         elif choice == "2":
             show_path = not show_path
-            # if config["DISPLAY"] == "static":
-            display_maze(output, current_color, show_path, True)
+            display_maze(output, current_color, show_path)
 
         elif choice == "3":
             color_index = (color_index + 1) % len(colors)
             current_color = colors[color_index]
-            # if config["DISPLAY"] == "static":
-            display_maze(output, current_color, show_path, True)
+            display_maze(output, current_color, show_path)
         
         elif choice == "4":
             show_config("../config.txt")
