@@ -115,7 +115,7 @@ def read_config(filename: str) -> dict[str, Any]:
     }
 
 
-def show_config(filename: str):
+def show_config(filename: str) -> None:
     config = read_config(filename)
     print("\n=== Current Configurations ===")
     for k, v in config.items():
@@ -123,26 +123,45 @@ def show_config(filename: str):
     print()
 
 
-def set_config(filename: str, current_algorithm: str, toggle_algorithm: str) -> None:
+def set_algorithm(
+        filename: str,
+        current_algorithm: str,
+        toggle_algorithm: str
+) -> None:
     raw = file_validator(filename)
     if "ALGORITHM" in raw.keys():
-            with open(filename, "r") as f:
-                lines = f.readlines()
-            found = False
-            for i, line in enumerate(lines):
-                if line.startswith("ALGORITHM="):
-                    value = line.split("=", 1)[1]
-                    if (
-                        value.strip().lower() == current_algorithm.lower()
-                        or value.strip() == ""
-                    ):
-                        lines[i] = f"ALGORITHM={toggle_algorithm}\n"
-                        found = True
-                        break
-            if found:
-                with open(filename, "w") as f:
-                    f.writelines(lines)
+        with open(filename, "r") as f:
+            lines = f.readlines()
+        found = False
+        for i, line in enumerate(lines):
+            if line.startswith("ALGORITHM="):
+                value = line.split("=", 1)[1]
+                if (
+                    value.strip().lower() == current_algorithm.lower()
+                    or value.strip() == ""
+                ):
+                    lines[i] = f"ALGORITHM={toggle_algorithm}\n"
+                    found = True
+                    break
+        if found:
+            with open(filename, "w") as f:
+                f.writelines(lines)
     else:
         with open(filename, "a") as f:
             f.write(f"\nALGORITHM={toggle_algorithm}")
 
+
+def toggle_perfect(filename: str) -> None:
+    _ = file_validator(filename)
+    with open(filename, "r") as f:
+        lines = f.readlines()
+    for i, line in enumerate(lines):
+        if line.startswith("PERFECT="):
+            value = line.split("=", 1)[1]
+            if value.strip().lower() == "true":
+                lines[i] = "PERFECT=False\n"
+            else:
+                lines[i] = "PERFECT=True\n"
+                break
+    with open(filename, "w") as f:
+        f.writelines(lines)

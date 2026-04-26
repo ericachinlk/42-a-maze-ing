@@ -1,25 +1,33 @@
-import os
+# Box Drawing Characters
+V_WALL = "┃"
+H_WALL = "━━━"
+RESET = "\033[0m"
+
+north, east, south, west = 1, 2, 4, 8
+
+THEMES = {
+    "day": {
+        "start": "\033[38;5;78m",
+        "goal": "\033[38;5;203m",
+        "path": "\033[38;5;222m",
+        "pattern": "\033[48;5;230m"
+    },
+    "night": {
+        "start": "\033[38;5;117m",
+        "goal": "\033[38;5;215m",
+        "path": "\033[38;5;246m",
+        "pattern": "\033[48;5;236m"
+    }
+}
 
 
 class RenderError(Exception):
     pass
 
 
-# Box Drawing Characters
-V_WALL = "┃"
-H_WALL = "━━━"
-D_GREEN = "\033[42m"
-RESET = "\033[0m"
-RED = "\033[91m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-BLUE = "\033[94m"
-BOLD = "\033[1m"
-
-north, east, south, west = 1, 2, 4, 8
-
-
-def get_corner(grid, x, y, width, height) -> str:
+def get_corner(
+        grid: list[list[int]],
+        x: int, y: int, width: int, height: int) -> str:
     """
     Intersection at Top-Left of cell (x, y).
     Checks 4 adjacent cells to see which walls meet at this point.
@@ -59,46 +67,51 @@ def get_corner(grid, x, y, width, height) -> str:
     return res.get((up, down, left, right), " ")
 
 
-THEMES = {
-    "day": {
-        "start": "\033[38;5;121m",   # soft green 🌱
-        "goal": "\033[38;5;210m",    # soft pink 🏡
-        "path": "\033[38;5;222m",    # warm beige ·
-        "pattern": "\033[48;5;230m"  # cream background
-    },
-    "night": {
-        "start": "\033[38;5;114m",   # soft teal 🌿
-        "goal": "\033[38;5;203m",    # soft red 🌙
-        "path": "\033[38;5;110m",    # muted blue
-        "pattern": "\033[48;5;236m"  # dark cozy bg
-    }
-}
+def build_path_cells(
+        start: tuple[int, int], path_str: str) -> set[tuple[int, int]]:
+    x, y = start
+    cells = {(x, y)}
+    moves = {"N": (0, -1), "E": (1, 0), "S": (0, 1), "W": (-1, 0)}
+
+    for step in path_str:
+        dx, dy = moves.get(step, (0, 0))
+        x += dx
+        y += dy
+        cells.add((x, y))
+
+    return cells
 
 
-def render_box(
+def parse_tuple(s: str) -> tuple[int, int]:
+    s = s.strip("()")
+    x, y = s.split(",")
+    return int(x), int(y)
+
+
+def render_maze(
         filepath: str,
         color: str = "",
         show_path: bool = False,
         final: bool = False,
         mode: str = "day"
 ) -> str:
-    if not os.path.exists(filepath):
+    try:
+        with open(filepath, 'r') as f:
+            lines = [line.strip() for line in f.readlines() if line.strip()]
+    except FileNotFoundError:
         raise RenderError(f"{filepath} not found.")
-
-    with open(filepath, 'r') as f:
-        lines = [line.strip() for line in f.readlines() if line.strip()]
 
     grid_lines = []
     coord_lines = []
     path_line = ""
 
-    for l in lines:
-        if l.startswith("("):
-            coord_lines.append(l)
-        elif all(c in "0123456789ABCDEF" for c in l):
-            grid_lines.append(l)
+    for line in lines:
+        if line.startswith("("):
+            coord_lines.append(line)
+        elif all(c in "0123456789ABCDEF" for c in line):
+            grid_lines.append(line)
         else:
-            path_line = l
+            path_line = line
 
     if not grid_lines:
         raise RenderError(f"{filepath} doesn't contain a valid maze.")
@@ -106,34 +119,16 @@ def render_box(
     width, height = len(grid_lines[0]), len(grid_lines)
     grid = [[int(c, 16) for c in row] for row in grid_lines]
 
-    def parse_tuple(s: str) -> tuple[int, int]:
-        s = s.strip("()")
-        x, y = s.split(",")
-        return int(x), int(y)
-
     try:
         start_pos = parse_tuple(coord_lines[0])
         end_pos = parse_tuple(coord_lines[1])
     except (IndexError, ValueError):
         start_pos, end_pos = (0, 0), (width - 1, height - 1)
 
-    def build_path_cells(start, path_str):
-        x, y = start
-        cells = {(x, y)}
-        moves = {"N": (0, -1), "E": (1, 0), "S": (0, 1), "W": (-1, 0)}
-
-        for step in path_str:
-            dx, dy = moves.get(step, (0, 0))
-            x += dx
-            y += dy
-            cells.add((x, y))
-
-        return cells
-
     path_cells = set()
     if show_path and path_line:
         path_cells = build_path_cells(start_pos, path_line)
-    
+
     theme = THEMES.get(mode, THEMES["day"])
 
     output = []
@@ -168,10 +163,10 @@ def render_box(
                 if x < width:
                     if (x, y) == start_pos:
                         # line += f" {BOLD}{GREEN}S{RESET} "
-                        line += f" {theme['start']}S{RESET} "
+                        line += f" \033[1m{theme['start']}S{RESET} "
                     elif (x, y) == end_pos:
                         # line += f" {BOLD}{RED}G{RESET} "
-                        line += f" {theme['goal']}G{RESET} "
+                        line += f" \033[1m{theme['goal']}G{RESET} "
                     elif (x, y) in path_cells:
                         # line += f" {BOLD}{YELLOW}•{RESET} "
                         line += f" {theme['path']}·{RESET} "

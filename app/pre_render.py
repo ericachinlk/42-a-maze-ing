@@ -5,9 +5,9 @@ import time
 
 def pre_render(config: Dict[str, Any],
                maze: MazeGenerator,
+               mode: str,
                color: str = "") -> None:
-    from .render import render_box
-    from .generate_maze import write_output
+    from .generate_maze import write_output, display_maze
 
     write_output(
         config["OUTPUT_FILE"],
@@ -16,6 +16,5 @@ def pre_render(config: Dict[str, Any],
         config["EXIT"]
     )
 
-    print("\033[H", end="")   # move cursor to top-left
-    print(render_box(config["OUTPUT_FILE"], color, final=False))
+    display_maze(config["OUTPUT_FILE"], color, mode, final=False)
     time.sleep(0.03)

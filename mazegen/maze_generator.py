@@ -109,6 +109,7 @@ class MazeGenerator:
             self,
             config: dict[str, Any],
             color: str,
+            mode: str,
             use_pattern: bool = False
     ) -> None:
         """
@@ -143,7 +144,7 @@ class MazeGenerator:
         # print final frame
         from app import display_maze
 
-        display_maze(config["OUTPUT_FILE"], color, False)
+        display_maze(config["OUTPUT_FILE"], color, mode, final=True)
 
     def _generate_dfs(self, visited: list[list[bool]], config, color) -> None:
         def dfs(x: int, y: int) -> None:
@@ -199,7 +200,7 @@ class MazeGenerator:
                 ):
                     self.grid[y][x] ^= wall
                     self.grid[ny][nx] ^= opposite
-                    
+
                     from app import pre_render
                     pre_render(config, self, color)
 
@@ -209,9 +210,6 @@ class MazeGenerator:
         # start running dfs from given start coordinates
         start_x, start_y = self.entry
         dfs(start_x, start_y)
-        # import os
-        # os.system('clear')
-
 
     def _generate_prim(self, visited: list[list[bool]], config, color) -> None:
         start_x, start_y = self.entry
@@ -422,4 +420,4 @@ class MazeGenerator:
                     visited.add((nx, ny))
                     queue.append((nx, ny, path + letter))
 
-        return ""  # should never happen if maze is valid
+        return ""

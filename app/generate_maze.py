@@ -1,11 +1,12 @@
 from mazegen import MazeGenerator
-from app import read_config, render_box
+from app import read_config, render_maze
 from typing import Optional
 
 
-def generate_maze(
+def generate_output(
         config_file: str,
         color: str = "",
+        mode: str = "day",
         seed: Optional[int] = None,
 ) -> str:
     config = read_config(config_file)
@@ -22,7 +23,7 @@ def generate_maze(
         config["PERFECT"],
         config["ALGORITHM"]
     )
-    maze.generate(config, color, use_pattern=True)
+    maze.generate(config, color, mode, use_pattern=True)
 
     write_output(
         config["OUTPUT_FILE"],
@@ -34,9 +35,15 @@ def generate_maze(
     return config["OUTPUT_FILE"]
 
 
-def display_maze(file, color, show_path, mode = "day"):
-    print("\033[H", end="")
-    print(render_box(file, color, show_path, final=True, mode=mode))
+def display_maze(
+        filename: str,
+        color: str,
+        mode: str,
+        show_path: bool = False,
+        final: bool = True
+) -> None:
+    print("\033[H\033[J", end="")
+    print(render_maze(filename, color, show_path, final, mode))
 
 
 def write_output(
