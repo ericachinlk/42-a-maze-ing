@@ -133,9 +133,9 @@ class MazeGenerator:
             self.apply_42_pattern(visited)
 
         if self.algorithm == "dfs":
-            self._generate_dfs(visited, config, color)
+            self._generate_dfs(visited, config, color, mode)
         elif self.algorithm == "prim":
-            self._generate_prim(visited, config, color)
+            self._generate_prim(visited, config, color, mode)
 
         # handle PERFECT=False (multiple paths instead of just one)
         if not self.perfect:
@@ -146,7 +146,9 @@ class MazeGenerator:
 
         display_maze(config["OUTPUT_FILE"], color, mode, final=True)
 
-    def _generate_dfs(self, visited: list[list[bool]], config, color) -> None:
+    def _generate_dfs(
+            self, visited: list[list[bool]],
+            config: dict[str, Any], color: str, mode: str) -> None:
         def dfs(x: int, y: int) -> None:
             """
             A recursive function that:
@@ -202,7 +204,7 @@ class MazeGenerator:
                     self.grid[ny][nx] ^= opposite
 
                     from app import pre_render
-                    pre_render(config, self, color)
+                    pre_render(config, self, mode, color)
 
                     # move to next cell and repeat
                     dfs(nx, ny)
@@ -211,7 +213,9 @@ class MazeGenerator:
         start_x, start_y = self.entry
         dfs(start_x, start_y)
 
-    def _generate_prim(self, visited: list[list[bool]], config, color) -> None:
+    def _generate_prim(
+            self, visited: list[list[bool]],
+            config: dict[str, Any], color: str, mode: str) -> None:
         start_x, start_y = self.entry
         visited[start_y][start_x] = True
         walls: list[tuple[int, int, int, int, int, int]] = []
@@ -239,7 +243,7 @@ class MazeGenerator:
                 self.grid[ny][nx] ^= opposite
 
                 from app import pre_render
-                pre_render(config, self, color)
+                pre_render(config, self, mode, color)
 
                 visited[ny][nx] = True
                 add_walls(nx, ny)
@@ -249,7 +253,7 @@ class MazeGenerator:
         Randomly removes walls to create multiple paths, avoiding 3x3 areas.
         """
         # remove walls of 10% of the maze cells
-        extra_removals = (self.width * self.height) // 10
+        extra_removals = (self.width * self.height) // 3
         attempts = 0
         removed = 0
 
