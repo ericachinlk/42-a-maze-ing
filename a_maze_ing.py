@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-from app import read_config, generate_maze, display_maze, show_config, set_config
+from app import read_config, generate_maze, display_maze, show_config, set_config, ConfigError, RenderError
 
 """Note: need to add docstrings for all functions"""
 
@@ -20,50 +20,70 @@ def main() -> None:
         return
     config_file = sys.argv[1]
 
-    colors = [WHITE, RED, GREEN, YELLOW, BLUE]
+    # colors = [WHITE, RED, GREEN, YELLOW, BLUE]
+    wall_colors = [
+    "\033[38;5;240m",  # gray
+    "\033[38;5;67m",   # soft blue
+    "\033[38;5;108m",  # soft green
+    "\033[38;5;137m",  # muted amber
+    "\033[38;5;131m",  # dusty red
+]
     color_index = 0
     show_path = False
-    current_color = colors[color_index]
-    output = generate_maze(config_file, current_color)
+    # current_color = colors[color_index]
+    current_wall_color = wall_colors[color_index]
+    try:
+        output = generate_maze(config_file, current_wall_color)
+        mode = "day"
+        while True:
+            config = read_config(config_file)
+            print("=== A-Maze-ing ===")
+            print("1. Regenerate new maze")
+            print("2. Show/hide path from entry to exit")
+            print("3. Rotate maze colours")
+            print(f"4. Day/Night mode: {mode}")
+            print(f"5. Algorithm: {config['ALGORITHM']}")
+            print("6. Show configurations")
+            print("7. Quit")
+            choice = input("Choice? (1-7): ")
+            if choice == "1":
+                show_path = False
+                import random
 
-    while True:
-        print("=== A-Maze-ing ===")
-        print("1. Regenerate new maze")
-        print("2. Show/hide path from entry to exit")
-        print("3. Rotate maze colours")
-        print("4. Display current configurations")
-        print("5. Modify configurations")
-        print("6. Quit")
-        choice = input("Choice? (1-6): ")
-        if choice == "1":
-            import random
+                output = generate_maze(config_file, current_wall_color, seed=random.randint(1, 1000))
 
-            output = generate_maze(config_file, current_color, seed=random.randint(1, 1000))
+            elif choice == "2":
+                show_path = not show_path
+                display_maze(output, current_wall_color, show_path, mode=mode)
 
-        elif choice == "2":
-            show_path = not show_path
-            display_maze(output, current_color, show_path)
+            elif choice == "3":
+                color_index = (color_index + 1) % len(wall_colors)
+                current_wall_color = wall_colors[color_index]
+                display_maze(output, current_wall_color, show_path, mode=mode)
+            
+            elif choice == "4":
+                mode = "night" if mode == "day" else "day"
+                display_maze(output, current_wall_color, show_path, mode=mode)
+            
+            elif choice == "5":
+                val = "prim" if config["ALGORITHM"] == "dfs" else "dfs"
+                set_config(config_file, config["ALGORITHM"], val)
 
-        elif choice == "3":
-            color_index = (color_index + 1) % len(colors)
-            current_color = colors[color_index]
-            display_maze(output, current_color, show_path)
-        
-        elif choice == "4":
-            show_config("../config.txt")
-        
-        # this is not working as it should... it keeps saying cannot find the keyword, will fix
-        elif choice == "5":
-            mod = input("Usage: KEY VALUE, e.g. 'ALGORITHM prim': ").split()
-            if len(mod) != 2:
-                print("Usage: KEY VALUE")
-                sys.exit(1)
-            key = mod[0]
-            value = mod[1]
-            set_config("../config.txt", key, value)
+                show_path = False
+                output = generate_maze(config_file, current_wall_color)
+            
+            elif choice == "6":
+                show_config(config_file)
 
-        elif choice == "6":
-            break
+            elif choice == "7":
+                break
+    
+    except ConfigError as e:
+        print("Configurations Error:", e)
+        sys.exit()
+    except RenderError as e:
+        print("Rendering Error:", e)
+        sys.exit()
 
 
 if __name__ == "__main__":

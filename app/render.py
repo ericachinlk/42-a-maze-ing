@@ -1,5 +1,8 @@
 import os
-from typing import Dict
+
+
+class RenderError(Exception):
+    pass
 
 
 # Box Drawing Characters
@@ -16,7 +19,7 @@ BOLD = "\033[1m"
 north, east, south, west = 1, 2, 4, 8
 
 
-def get_corner(grid, x, y, width, height, final: bool = False) -> str:
+def get_corner(grid, x, y, width, height) -> str:
     """
     Intersection at Top-Left of cell (x, y).
     Checks 4 adjacent cells to see which walls meet at this point.
@@ -56,10 +59,31 @@ def get_corner(grid, x, y, width, height, final: bool = False) -> str:
     return res.get((up, down, left, right), " ")
 
 
-def render_box(filepath: str, color: str = "", show_path: bool = False, final: bool = False) -> None:
+THEMES = {
+    "day": {
+        "start": "\033[38;5;121m",   # soft green 🌱
+        "goal": "\033[38;5;210m",    # soft pink 🏡
+        "path": "\033[38;5;222m",    # warm beige ·
+        "pattern": "\033[48;5;230m"  # cream background
+    },
+    "night": {
+        "start": "\033[38;5;114m",   # soft teal 🌿
+        "goal": "\033[38;5;203m",    # soft red 🌙
+        "path": "\033[38;5;110m",    # muted blue
+        "pattern": "\033[48;5;236m"  # dark cozy bg
+    }
+}
+
+
+def render_box(
+        filepath: str,
+        color: str = "",
+        show_path: bool = False,
+        final: bool = False,
+        mode: str = "day"
+) -> str:
     if not os.path.exists(filepath):
-        print(f"Error: {filepath} not found.")
-        return
+        raise RenderError(f"{filepath} not found.")
 
     with open(filepath, 'r') as f:
         lines = [line.strip() for line in f.readlines() if line.strip()]
@@ -77,8 +101,7 @@ def render_box(filepath: str, color: str = "", show_path: bool = False, final: b
             path_line = l
 
     if not grid_lines:
-        print(f"Error: {filepath} doesn't contain a valid maze.")
-        return
+        raise RenderError(f"{filepath} doesn't contain a valid maze.")
 
     width, height = len(grid_lines[0]), len(grid_lines)
     grid = [[int(c, 16) for c in row] for row in grid_lines]
@@ -110,6 +133,8 @@ def render_box(filepath: str, color: str = "", show_path: bool = False, final: b
     path_cells = set()
     if show_path and path_line:
         path_cells = build_path_cells(start_pos, path_line)
+    
+    theme = THEMES.get(mode, THEMES["day"])
 
     output = []
     for y in range(height + 1):
@@ -142,13 +167,17 @@ def render_box(filepath: str, color: str = "", show_path: bool = False, final: b
 
                 if x < width:
                     if (x, y) == start_pos:
-                        line += f" {BOLD}{GREEN}S{RESET} "
+                        # line += f" {BOLD}{GREEN}S{RESET} "
+                        line += f" {theme['start']}S{RESET} "
                     elif (x, y) == end_pos:
-                        line += f" {BOLD}{RED}G{RESET} "
+                        # line += f" {BOLD}{RED}G{RESET} "
+                        line += f" {theme['goal']}G{RESET} "
                     elif (x, y) in path_cells:
-                        line += f" {BOLD}{YELLOW}•{RESET} "
+                        # line += f" {BOLD}{YELLOW}•{RESET} "
+                        line += f" {theme['path']}·{RESET} "
                     elif grid[y][x] == 15 and final:
-                        line += f"{BOLD}\033[107m   {RESET}"
+                        # line += f"{BOLD}\033[107m   {RESET}"
+                        line += f"{theme['pattern']}   {RESET}"
                     else:
                         line += "   "
             output.append(line)

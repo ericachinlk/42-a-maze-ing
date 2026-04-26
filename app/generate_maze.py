@@ -6,7 +6,7 @@ from typing import Optional
 def generate_maze(
         config_file: str,
         color: str = "",
-        seed: Optional[int] = None
+        seed: Optional[int] = None,
 ) -> str:
     config = read_config(config_file)
     seed_value = seed if seed is not None else config["SEED"]
@@ -34,9 +34,9 @@ def generate_maze(
     return config["OUTPUT_FILE"]
 
 
-def display_maze(file, color, show_path):
-    print("\033[2J\033[H", end="")
-    print(render_box(file, color, show_path=show_path, final=True))
+def display_maze(file, color, show_path, mode = "day"):
+    print("\033[H", end="")
+    print(render_box(file, color, show_path, final=True, mode=mode))
 
 
 def write_output(

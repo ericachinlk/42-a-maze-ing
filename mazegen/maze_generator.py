@@ -1,7 +1,6 @@
 import random
 from collections import deque
 from typing import Any
-from app import render_box
 
 # Bitmask directions
 N, E, S, W = 1, 2, 4, 8
@@ -141,10 +140,10 @@ class MazeGenerator:
         if not self.perfect:
             self._add_loops()
 
-        # final frame ONLY ONCE
-        output = render_box(config["OUTPUT_FILE"], color, final=True)
-        print("\033[H", end="")
-        print(output)
+        # print final frame
+        from app import display_maze
+
+        display_maze(config["OUTPUT_FILE"], color, False)
 
     def _generate_dfs(self, visited: list[list[bool]], config, color) -> None:
         def dfs(x: int, y: int) -> None:
