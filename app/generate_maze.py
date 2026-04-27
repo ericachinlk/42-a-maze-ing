@@ -1,4 +1,4 @@
-from mazegen import MazeGenerator
+from mazegen import MazeGenerator, MazeError
 from typing import Optional, Any
 
 
@@ -141,8 +141,8 @@ def write_output(
                 f.write(line + "\n")
     
             f.write("\n")
-            f.write(f"{entry}\n")
-            f.write(f"{exit}\n")
+            f.write(f"{entry[0]},{entry[1]}\n")
+            f.write(f"{exit[0]},{exit[1]}\n")
             f.write(f"{path}\n")
     except OSError as e:
         raise MazeError(f"Failed to write output file: {e}")
