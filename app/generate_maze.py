@@ -1,5 +1,5 @@
 from mazegen import MazeGenerator, MazeError
-from typing import Optional, Any
+from typing import Optional
 
 
 def generate_output(
@@ -7,7 +7,7 @@ def generate_output(
         color: str = "",
         mode: str = "day",
         seed: Optional[int] = None,
-) -> Any:
+) -> str:
     """
     Generate a maze from a configuration file and write the result to disk.
 
@@ -34,7 +34,7 @@ def generate_output(
             for deterministic generation. If None, uses config seed.
 
     Returns:
-        Any: The output filename where the generated maze is written.
+        str: The output filename where the generated maze is written.
     """
     from app.config import read_config
     config = read_config(config_file)
@@ -68,7 +68,7 @@ def generate_output(
         config["EXIT"]
     )
 
-    return config["OUTPUT_FILE"]
+    return config.get("OUTPUT_FILE", "maze.txt")
 
 
 def display_maze(
