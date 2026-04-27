@@ -47,13 +47,19 @@ def generate_output(
         config["HEIGHT"],
         config["ENTRY"],
         config["EXIT"],
-        seed_value,
-        config["PERFECT"],
-        config["ALGORITHM"]
+        seed=seed_value,
+        perfect=config["PERFECT"],
+        algorithm=config["ALGORITHM"]
     )
     from app.app_renderer import AppRenderer
     renderer = AppRenderer()
-    maze.generate(config, color, mode, use_pattern=True, renderer=renderer)
+
+    maze.generate(
+        config=config,
+        color=color,
+        mode=mode,
+        use_pattern=True,
+        renderer=renderer)
 
     write_output(
         config["OUTPUT_FILE"],
@@ -129,12 +135,14 @@ def write_output(
         None
     """
     path = maze.find_shortest_path()
-
-    with open(filename, "w") as f:
-        for line in maze.to_hex():
-            f.write(line + "\n")
-
-        f.write("\n")
-        f.write(f"{entry}\n")
-        f.write(f"{exit}\n")
-        f.write(f"{path}\n")
+    try:
+        with open(filename, "w") as f:
+            for line in maze.to_hex():
+                f.write(line + "\n")
+    
+            f.write("\n")
+            f.write(f"{entry}\n")
+            f.write(f"{exit}\n")
+            f.write(f"{path}\n")
+    except OSError as e:
+        raise MazeError(f"Failed to write output file: {e}")
