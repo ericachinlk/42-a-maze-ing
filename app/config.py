@@ -101,7 +101,7 @@ def parse_seed(value: str | None, name: str) -> int | None:
         return parse_int(value, name)
 
 
-def parse_algo(value: str | None, name: str) -> Any:
+def parse_algo(value: str | None, name: str) -> str:
     """
     Parse maze generation algorithm.
 
