@@ -1,6 +1,7 @@
 Rules for pytest:
 * file must start with test_
 * function must start with test_
+* not submitted 
 
 To use the pytest:
 - pip install pytest
