@@ -1,7 +1,6 @@
 import random
 from collections import deque
 from typing import Any, Protocol
-import os
 
 """
 Maze generation engine supporting DFS and Prim algorithms.
@@ -12,8 +11,6 @@ This module provides:
 
 The generator is independent of UI and can be used standalone.
 """
-
-DEBUG = os.getenv("DEBUG") == "1"
 
 # Bitmask directions used for wall encoding in each cell
 N, E, S, W = 1, 2, 4, 8
@@ -65,6 +62,25 @@ class Renderer(Protocol):
         ...
 
 
+class MazeError(Exception):
+    """
+    Base exception for all maze-related errors in the MazeGenerator module.
+
+    This exception is used to signal invalid inputs, configuration issues,
+    or illegal states encountered during maze generation.
+
+    It provides a unified error type so that users of the library can
+    consistently catch and handle all maze-specific errors.
+
+    Example:
+        try:
+            MazeGenerator(width=-1, height=10, ...)
+        except MazeError as e:
+            print(f"Maze error: {e}")
+    """
+    pass
+
+
 class MazeGenerator:
     """
     MazeGenerator is a reusable maze generation engine.
@@ -112,7 +128,7 @@ class MazeGenerator:
             algorithm="dfs"
         )
 
-        maze.generate(config={}, color="", mode="day")
+        maze.generate()
 
         print(maze.grid)                 # raw structure
         print(maze.find_shortest_path()) # solution path (N/E/S/W)
@@ -135,22 +151,29 @@ class MazeGenerator:
             height: int,
             entry: tuple[int, int],
             exit: tuple[int, int],
-            seed: int,
+            seed: Optional[int] = None,
             perfect: bool,
             algorithm: str
     ) -> None:
         """
         Initialise a maze generator instance.
+        
+        Sets up the maze dimensions, generation
+        parameters, and internal grid structure.
+        All parameters are validated before maze creation.
 
         Args:
             width (int): Maze width in cells.
             height (int): Maze height in cells.
             entry (tuple[int, int]): Starting coordinate (x, y).
             exit (tuple[int, int]): Ending coordinate (x, y).
-            seed (int): Random seed for reproducibility.
+            seed (int | None): Random seed for reproducibility.
             perfect (bool): If True, generates a perfect maze (no loops).
             algorithm (str): "dfs" or "prim".
-
+        
+        Raises:
+            MazeError: If any input parameters are invalid.
+        
         Notes:
             self.width, self.height store size of maze
             self.grid creates the maze
@@ -171,6 +194,8 @@ class MazeGenerator:
             if only S is closed - 0100 ~ 4
             if only W is closed - 1000 ~ 8
         """
+        self._validate(width, height, entry, exit, algorithm, seed)
+        
         self.width = width
         self.height = height
         self.entry = entry
@@ -179,8 +204,10 @@ class MazeGenerator:
         self.perfect = perfect
         self.algorithm = algorithm
         self.pattern_cells: set[tuple[int, int]] = set()
-
-        self.rng = random.Random(seed)
+        
+        if self.seed is None:
+            seed_val = random.randint(1, 1000)
+        self.rng = random.Random(seed_val)
 
         # Initialize grid (all walls closed = 15)
         self.grid: list[list[int]] = []
@@ -190,6 +217,63 @@ class MazeGenerator:
                 row.append(15)
             self.grid.append(row)
 
+    def _validate(
+        self,
+        width: int,
+        height: int,
+        entry: tuple[int, int],
+        exit: tuple[int, int],
+        algorithm: str,
+        seed: int | None
+    ) -> None:
+        """
+        Validates initialization parameters for MazeGenerator.
+
+        Ensures that the maze configuration is valid before generation begins.
+        This prevents runtime errors caused by invalid dimensions, coordinates,
+        or unsupported algorithms.
+
+        Args:
+            width (int): Width of the maze in cells. Must be a positive integer.
+            height (int): Height of the maze in cells. Must be a positive integer.
+            entry (tuple[int, int]): Starting coordinate (x, y).
+            exit (tuple[int, int]): Ending coordinate (x, y).
+            algorithm (str): Maze generation algorithm. Must be either
+                "dfs" or "prim".
+
+        Raises:
+            MazeError: If any parameter is invalid, out of bounds, or unsupported.
+
+        Returns:
+            None
+        """
+        if not isinstance(width, int) or width <= 0:
+            raise MazeError("width must be positive integer")
+    
+        if not isinstance(height, int) or height <= 0:
+            raise MazeError("height must be positive integer")
+    
+        if algorithm not in ("dfs", "prim"):
+            raise MazeError("algorithm must be 'dfs' or 'prim'")
+
+        if (
+            not isinstance(entry, tuple)
+            or not isinstance(exit, tuple)
+            or len(entry) != 2
+            or len(exit) != 2
+        ):
+            raise MazeError("entry and exit must be (x, y) tuples")
+    
+        ex, ey = entry
+        xx, xy = exit
+        if not (0 <= ex < width and 0 <= ey < height):
+            raise MazeError("entry out of bounds")
+        if not (0 <= xx < width and 0 <= xy < height):
+            raise MazeError("exit out of bounds")
+        
+        if seed is not None and not isinstance(seed, int):
+            raise MazeError("seed must be an integer or None")
+    
     def apply_42_pattern(self, visited: list[list[bool]]) -> None:
         """
         Inserts a fixed "42" obstacle pattern into the maze.
@@ -242,13 +326,12 @@ class MazeGenerator:
 
     def generate(
             self,
-            config: dict[str, Any],
+            config: dict[str, Any] | None = None,
             color: str = "",
             mode: str = "day",
             use_pattern: bool = False,
             renderer: Renderer | None = None
     ) -> None:
-
         """
         Generates the maze using the selected algorithm.
 
@@ -256,7 +339,7 @@ class MazeGenerator:
         pattern constraints and loop removal.
 
         Args:
-            config: Configuration dictionary
+            config: Configuration dictionary or None
             color: Rendering color code.
             mode: Display mode (e.g. "day" or "night").
             use_pattern: If True, applies embedded pattern constraints.
@@ -264,6 +347,9 @@ class MazeGenerator:
         Returns:
             None
         """
+        if config is None:
+            config = {}
+
         visited: list[list[bool]] = []
 
         for _ in range(self.height):
@@ -285,12 +371,7 @@ class MazeGenerator:
         if not self.perfect:
             self._add_loops(config, color, mode, renderer)
 
-        if DEBUG:
-            breakpoint()
-
         # print final frame
-        # from app import display_maze
-        # display_maze(config["OUTPUT_FILE"], color, mode)
         if renderer:
             renderer.display_maze(config["OUTPUT_FILE"], color, mode)
 
@@ -381,8 +462,6 @@ class MazeGenerator:
                     self.grid[y][x] ^= wall
                     self.grid[ny][nx] ^= opposite
 
-                    # from app import pre_render
-                    # pre_render(config, self, mode, color)
                     if renderer:
                         renderer.pre_render(config, self, mode, color)
 
@@ -444,8 +523,6 @@ class MazeGenerator:
                 self.grid[y][x] ^= wall
                 self.grid[ny][nx] ^= opposite
 
-                # from app import pre_render
-                # pre_render(config, self, mode, color)
                 if renderer:
                     renderer.pre_render(config, self, mode, color)
 
@@ -507,8 +584,6 @@ class MazeGenerator:
                     self.grid[y + dy][x + dx] ^= opp
                     removed += 1
 
-                    # from app import pre_render
-                    # pre_render(config, self, mode, color)
                     if renderer:
                         renderer.pre_render(config, self, mode, color)
 
