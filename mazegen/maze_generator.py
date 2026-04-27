@@ -152,8 +152,8 @@ class MazeGenerator:
             entry: tuple[int, int],
             exit: tuple[int, int],
             seed: Optional[int] = None,
-            perfect: bool,
-            algorithm: str
+            perfect: bool = True,
+            algorithm: str = "dfs"
     ) -> None:
         """
         Initialise a maze generator instance.
@@ -274,6 +274,9 @@ class MazeGenerator:
         
         ex, ey = entry
         xx, xy = exit
+
+        if not all(isinstance(v, int) for v in (ex, ey, xx, xy)):
+            raise MazeError("entry and exit coordinates must be integers")
         if not (0 <= ex < width and 0 <= ey < height):
             raise MazeError("entry out of bounds")
         if not (0 <= xx < width and 0 <= xy < height):
@@ -299,8 +302,7 @@ class MazeGenerator:
         # the '42' pattern will take 5x7 grid
         # 1 extra of space around it to allow carve paths around
         if self.width < 8 or self.height < 6:
-            print("Error: Maze too small to apply '42' pattern.")
-            return
+            raise MazeError("Maze too small to apply '42' pattern")
 
         # list of coordinates that form shapes of '4' and '2' (y, x)
         # this will take up max 5 rows (height) and 7 columns (width)
@@ -381,7 +383,8 @@ class MazeGenerator:
 
         # print final frame
         if renderer:
-            renderer.display_maze(config["OUTPUT_FILE"], color, mode)
+            output = config.get("OUTPUT_FILE", "maze.txt")
+            renderer.display_maze(output, color, mode)
 
     def _generate_dfs(
             self, visited: list[list[bool]],
