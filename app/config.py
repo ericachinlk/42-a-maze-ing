@@ -47,14 +47,14 @@ def parse_tuple(value: str, name: str) -> tuple[int, int]:
     Raises:
         ConfigError: If format is invalid or values are not integers.
     """
+    cleaned = value.replace(" ", "")
+    parts = cleaned.split(",")
+    if len(parts) != 2:
+        raise ConfigError(f"{name} must contain exactly two values")
     try:
-        cleaned = value.replace(" ", "")
-        parts = cleaned.split(",")
-        if len(parts) != 2:
-            raise ConfigError(f"{name} must contain exactly two values")
         x, y = map(int, parts)
         return x, y
-    except (TypeError, ValueError):
+    except ValueError:
         raise ConfigError(f"{name} must be in format 'x,y'")
 
 
@@ -84,12 +84,12 @@ def parse_bool(value: str, name: str) -> bool:
     raise ConfigError(f"{name} must be true/false")
 
 
-def parse_seed(value: Any, name: str) -> Any:
+def parse_seed(value: str | None, name: str) -> int | None:
     """
     Parse optional seed value.
 
     Args:
-        value (Any): Seed value (string or None).
+        value (str | None): Seed value (string or None).
         name (str): Config key name.
 
     Returns:
@@ -101,12 +101,12 @@ def parse_seed(value: Any, name: str) -> Any:
         return parse_int(value, name)
 
 
-def parse_algo(value: Any, name: str) -> Any:
+def parse_algo(value: str | None, name: str) -> Any:
     """
     Parse maze generation algorithm.
 
     Args:
-        value (Any): Algorithm string.
+        value (str | None): Algorithm string.
         name (str): Config key name.
 
     Returns:
