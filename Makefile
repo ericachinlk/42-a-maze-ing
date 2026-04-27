@@ -8,6 +8,12 @@ install:
 	$(PIP) install --upgrade pip
 	$(PIP) install flake8 mypy
 
+dev-tools:
+	$(PIP) install build
+
+build:
+	$(PYTHON) -m build
+
 run:
 	$(PYTHON) $(MAIN) config.txt
 
