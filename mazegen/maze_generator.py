@@ -1,6 +1,6 @@
 import random
 from collections import deque
-from typing import Any, Protocol
+from typing import Any, Protocol, Optional
 
 """
 Maze generation engine supporting DFS and Prim algorithms.
@@ -167,7 +167,7 @@ class MazeGenerator:
             height (int): Maze height in cells.
             entry (tuple[int, int]): Starting coordinate (x, y).
             exit (tuple[int, int]): Ending coordinate (x, y).
-            seed (int | None): Random seed for reproducibility.
+            seed (Optional[int]): Random seed for reproducibility.
             perfect (bool): If True, generates a perfect maze (no loops).
             algorithm (str): "dfs" or "prim".
         
@@ -207,6 +207,8 @@ class MazeGenerator:
         
         if self.seed is None:
             seed_val = random.randint(1, 1000)
+        else:
+            seed_val = self.seed
         self.rng = random.Random(seed_val)
 
         # Initialize grid (all walls closed = 15)
@@ -238,8 +240,8 @@ class MazeGenerator:
             height (int): Height of the maze in cells. Must be a positive integer.
             entry (tuple[int, int]): Starting coordinate (x, y).
             exit (tuple[int, int]): Ending coordinate (x, y).
-            algorithm (str): Maze generation algorithm. Must be either
-                "dfs" or "prim".
+            algorithm (str): Maze generation algorithm. Must be either dfs" or "prim".
+            seed (int | None): Must be an integer or None.
 
         Raises:
             MazeError: If any parameter is invalid, out of bounds, or unsupported.
@@ -263,7 +265,13 @@ class MazeGenerator:
             or len(exit) != 2
         ):
             raise MazeError("entry and exit must be (x, y) tuples")
-    
+        
+        if entry == exit:
+            raise MazeError("ENTRY and EXIT cannot be the same")
+
+        if width > 1000 or height > 1000:
+            raise MazeError("Maze dimensions too large")
+        
         ex, ey = entry
         xx, xy = exit
         if not (0 <= ex < width and 0 <= ey < height):
