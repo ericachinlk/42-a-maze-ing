@@ -22,6 +22,14 @@ THEMES = {
 
 
 class RenderError(Exception):
+    """
+    Exception raised when maze rendering fails.
+
+    Used when:
+    - file is missing
+    - maze format is invalid
+    - parsing of maze data fails
+    """
     pass
 
 
@@ -29,8 +37,20 @@ def get_corner(
         grid: list[list[int]],
         x: int, y: int, width: int, height: int) -> str:
     """
-    Intersection at Top-Left of cell (x, y).
-    Checks 4 adjacent cells to see which walls meet at this point.
+    Compute the correct Unicode box-drawing character for a grid corner.
+
+    This function determines how walls connect at a specific grid intersection
+    by checking surrounding cells.
+
+    Args:
+        grid (list[list[int]]): Maze grid encoded with bitmask walls.
+        x (int): X-coordinate of the corner.
+        y (int): Y-coordinate of the corner.
+        width (int): Maze width.
+        height (int): Maze height.
+
+    Returns:
+        str: Unicode character representing wall junction.
     """
     # Checks corners of cell (x, y)
     nw = grid[y - 1][x - 1] if y > 0 and x > 0 else 0
@@ -69,6 +89,16 @@ def get_corner(
 
 def build_path_cells(
         start: tuple[int, int], path_str: str) -> set[tuple[int, int]]:
+    """
+    Convert a path string into a set of visited coordinates.
+
+    Args:
+        start (tuple[int, int]): Starting coordinate.
+        path_str (str): Path encoded as directions (N, E, S, W).
+
+    Returns:
+        set[tuple[int, int]]: Set of coordinates visited along path.
+    """
     x, y = start
     cells = {(x, y)}
     moves = {"N": (0, -1), "E": (1, 0), "S": (0, 1), "W": (-1, 0)}
@@ -83,6 +113,17 @@ def build_path_cells(
 
 
 def parse_tuple(s: str) -> tuple[int, int]:
+    """
+    Parse a coordinate string into a tuple.
+
+    Expected format: "(x,y)"
+
+    Args:
+        s (str): Coordinate string.
+
+    Returns:
+        tuple[int, int]: Parsed (x, y) coordinate.
+    """
     s = s.strip("()")
     x, y = s.split(",")
     return int(x), int(y)
@@ -95,6 +136,28 @@ def render_maze(
         final: bool = False,
         mode: str = "day"
 ) -> str:
+    """
+    Render a maze from a saved output file into a string representation.
+
+    This function:
+    - Reads maze file
+    - Parses grid, entry/exit, and path
+    - Converts bitmask grid into ASCII/Unicode maze
+    - Optionally overlays shortest path and UI decorations
+
+    Args:
+        filepath (str): Path to maze output file.
+        color (str): Wall color escape code.
+        show_path (bool): Whether to display shortest path.
+        final (bool): Whether this is final render (shows start/goal/pattern).
+        mode (str): Display theme mode ("day" or "night").
+
+    Returns:
+        str: Fully rendered maze as a string.
+
+    Raises:
+        RenderError: If file is missing or maze format is invalid.
+    """
     try:
         with open(filepath, 'r') as f:
             lines = [line.strip() for line in f.readlines() if line.strip()]
@@ -161,17 +224,13 @@ def render_maze(
                 line += f"{color}{V_WALL}{RESET}" if has_v else " "
 
                 if x < width:
-                    if (x, y) == start_pos:
-                        # line += f" {BOLD}{GREEN}S{RESET} "
+                    if (x, y) == start_pos and final:
                         line += f" \033[1m{theme['start']}S{RESET} "
-                    elif (x, y) == end_pos:
-                        # line += f" {BOLD}{RED}G{RESET} "
+                    elif (x, y) == end_pos and final:
                         line += f" \033[1m{theme['goal']}G{RESET} "
                     elif (x, y) in path_cells:
-                        # line += f" {BOLD}{YELLOW}•{RESET} "
                         line += f" {theme['path']}·{RESET} "
                     elif grid[y][x] == 15 and final:
-                        # line += f"{BOLD}\033[107m   {RESET}"
                         line += f"{theme['pattern']}   {RESET}"
                     else:
                         line += "   "

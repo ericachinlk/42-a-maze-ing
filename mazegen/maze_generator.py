@@ -1,6 +1,9 @@
 import random
 from collections import deque
 from typing import Any
+import os
+
+DEBUG = os.getenv("DEBUG") == "1"
 
 # Bitmask directions
 N, E, S, W = 1, 2, 4, 8
@@ -8,12 +11,67 @@ N, E, S, W = 1, 2, 4, 8
 
 class MazeGenerator:
     """
-    Each cell stores wall information using bitwise encoding:
-    N=1, E=2, S=4, W=8
+    MazeGenerator is a reusable maze generation engine.
+
+    It supports:
+    - Depth-First Search (DFS)
+    - Prim's algorithm
+    - Optional loop removal (perfect / non-perfect mazes)
+    - Optional embedded pattern constraints (e.g. "42" pattern)
+    - Shortest path extraction (BFS solver)
+
+    -------------------------------------------------------------------
+    MAZE REPRESENTATION
+    -------------------------------------------------------------------
+    The maze is stored internally as:
+
+        self.grid[y][x] -> int (bitmask of walls)
+
+    Each cell uses 4-bit encoding:
+
+        N = 1
+        E = 2
+        S = 4
+        W = 8
 
     Example:
-    15 (1111) = all walls closed
-    0 (0000) = all walls open
+        15 (1111) = all walls closed
+        0  (0000) = all walls open
+
+    -------------------------------------------------------------------
+    BASIC USAGE
+    -------------------------------------------------------------------
+
+    Example:
+
+        from mazegen import MazeGenerator
+
+        maze = MazeGenerator(
+            width=20,
+            height=10,
+            entry=(0, 0),
+            exit=(19, 9),
+            seed=42,
+            perfect=True,
+            algorithm="dfs"
+        )
+
+        maze.generate(config={}, color="", mode="day")
+
+        print(maze.grid)                 # raw structure
+        print(maze.find_shortest_path()) # solution path (N/E/S/W)
+
+    -------------------------------------------------------------------
+    NOTES FOR REUSE (IMPORTANT)
+    -------------------------------------------------------------------
+    This class does NOT depend on rendering or CLI.
+
+    You can safely:
+    - ignore display_maze()
+    - ignore pre_render()
+    - use grid directly
+    - export maze via to_hex()
+    - compute solution via find_shortest_path()
     """
     def __init__(
             self,
@@ -26,24 +84,36 @@ class MazeGenerator:
             algorithm: str
     ) -> None:
         """
-        self.width, self.height store size of maze
-        self.grid creates the maze
-        The grid is a 2D list, each number = 1 cell
-        [
-        [15, 15, 15],
-        [15, 15, 15],
-        [15, 15, 15]
-        ]
+        Initialise a maze generator instance.
 
-        Why 15? Because binary 1111 = decimal 15
-        Means all 4 walls are closed, so every cell starts fully closed
-        grid[y][x] = W | S | E | N
-        all walls closed - 1111 ~ 15
-        all walls open - 0000 ~ 0
-        if only N is closed - 0001 ~ 1
-        if only E is closed - 0010 ~ 2
-        if only S is closed - 0100 ~ 4
-        if only W is closed - 1000 ~ 8
+        Args:
+            width (int): Maze width in cells.
+            height (int): Maze height in cells.
+            entry (tuple[int, int]): Starting coordinate (x, y).
+            exit (tuple[int, int]): Ending coordinate (x, y).
+            seed (int | None): Random seed for reproducibility.
+            perfect (bool): If True, generates a perfect maze (no loops).
+            algorithm (str): "dfs" or "prim".
+
+        Notes:
+            self.width, self.height store size of maze
+            self.grid creates the maze
+            The grid is a 2D list, each number = 1 cell
+            [
+            [15, 15, 15],
+            [15, 15, 15],
+            [15, 15, 15]
+            ]
+
+            Why 15? Because binary 1111 = decimal 15
+            Means all 4 walls are closed, so every cell starts fully closed
+            grid[y][x] = W | S | E | N
+            all walls closed - 1111 ~ 15
+            all walls open - 0000 ~ 0
+            if only N is closed - 0001 ~ 1
+            if only E is closed - 0010 ~ 2
+            if only S is closed - 0100 ~ 4
+            if only W is closed - 1000 ~ 8
         """
         self.width = width
         self.height = height
@@ -52,7 +122,7 @@ class MazeGenerator:
         self.seed = seed
         self.perfect = perfect
         self.algorithm = algorithm
-        self.pattern_cells: set = set()
+        self.pattern_cells: set[tuple[int, int]] = set()
 
         self.rng = random.Random(seed)
 
@@ -66,7 +136,16 @@ class MazeGenerator:
 
     def apply_42_pattern(self, visited: list[list[bool]]) -> None:
         """
-        Places a '42' using fully closed cells (15).
+        Inserts a fixed "42" obstacle pattern into the maze.
+
+        The pattern marks specific cells as blocked and visited to
+        force maze generation to route around it.
+
+        Args:
+            visited: Grid tracking visited cells during generation.
+
+        Returns:
+            None
         """
         # check if maze is big enough
         # the '42' pattern will take 5x7 grid
@@ -112,13 +191,21 @@ class MazeGenerator:
             mode: str,
             use_pattern: bool = False
     ) -> None:
-        """
-        A grid-based maze generator using randomized DFS (Depth-First Search).
-        Idea: Go as deep as possible in one direction before backtracking.
 
-        The function starts at one cell, randomly moves around,
-        removing walls to create paths.
-        This will create only one unique path from entry to exit ie perfect
+        """
+        Generates the maze using the selected algorithm.
+
+        Supports DFS or Prim's algorithm and optionally applies
+        pattern constraints and loop removal.
+
+        Args:
+            config: Configuration dictionary.
+            color: Rendering color code.
+            mode: Display mode (e.g. "day" or "night").
+            use_pattern: If True, applies embedded pattern constraints.
+
+        Returns:
+            None
         """
         visited: list[list[bool]] = []
 
@@ -139,49 +226,67 @@ class MazeGenerator:
 
         # handle PERFECT=False (multiple paths instead of just one)
         if not self.perfect:
-            self._add_loops()
+            self._add_loops(config, color, mode)
+
+        if DEBUG:
+            breakpoint()
 
         # print final frame
         from app import display_maze
-
-        display_maze(config["OUTPUT_FILE"], color, mode, final=True)
+        display_maze(config["OUTPUT_FILE"], color, mode)
 
     def _generate_dfs(
             self, visited: list[list[bool]],
             config: dict[str, Any], color: str, mode: str) -> None:
         def dfs(x: int, y: int) -> None:
             """
-            A recursive function that:
-            - mark current cell as visited
-            - shuffle directions
-            -- each tuple means dx, dy, wall to remove, opposite wall
-            -- example: (1, 0, E, W) means move to the right,
-            remove E wall of current cell, & remove W wall of cell to the right
-            - try moving nx, ny = x + dx, y + dy
-            - check if inside grid and not visited
-            - if yes then break walls
+            Generates maze using randomized Depth-First Search.
 
-            A XOR B = elements in A or B but not both
-            XOR works internally on each bit position:
-            - if bits are different, write 1
-            - if bits are same, write 0
-            Example:
-            cell = cell ^ E   # remove wall
-            cell = cell ^ E   # add it back
+            This is a recursive backtracking algorithm that carves
+            passages by visiting unvisited neighbors.
 
-            Recursive remark:
-            every function call is stored on a call stack,
-            and when a function finishes, the program resumes
-            from the previous stack frame.
+            Args:
+                visited: Grid tracking visited cells.
+                config: Configuration dictionary.
+                color: Rendering color.
+                mode: Display mode.
 
-            A simple visualization:
-            - dfs[0,0] -> dfs[0,1] -> dfs[1,1]
-            -> function finishes becoz no place to go from 1,1
-            - backtracks to dfs[0,1] -> example if function finishes too here
-            - backtracks to dfs[0,0] -> dfs[1,0] -> explore possible moves
-            - From (1,0): explore, go deeper if possible, otherwise return.
-            Eventually everything is visited.
-            So when dfs fully done, all visited[y][x] = True
+            Returns:
+                None
+
+            Notes:
+                A recursive function that:
+                - mark current cell as visited
+                - shuffle directions
+                -- each tuple means dx, dy, wall to remove, opposite wall
+                -- example: (1, 0, E, W) means move to the right,
+                remove E wall of current cell,
+                & remove W wall of cell to the right
+                - try moving nx, ny = x + dx, y + dy
+                - check if inside grid and not visited
+                - if yes then break walls
+
+                A XOR B = elements in A or B but not both
+                XOR works internally on each bit position:
+                - if bits are different, write 1
+                - if bits are same, write 0
+                Example:
+                cell = cell ^ E   # remove wall
+                cell = cell ^ E   # add it back
+
+                Recursive remark:
+                every function call is stored on a call stack,
+                and when a function finishes, the program resumes
+                from the previous stack frame.
+
+                A simple visualization:
+                - dfs[0,0] -> dfs[0,1] -> dfs[1,1]
+                -> function finishes becoz no place to go from 1,1
+                - backtracks to dfs[0,1] -> e.g. if function finishes too here
+                - backtracks to dfs[0,0] -> dfs[1,0] -> explore possible moves
+                - From (1,0): explore, go deeper if possible, otherwise return.
+                Eventually everything is visited.
+                So when dfs fully done, all visited[y][x] = True
             """
             visited[y][x] = True
 
@@ -209,14 +314,30 @@ class MazeGenerator:
                     # move to next cell and repeat
                     dfs(nx, ny)
 
-        # start running dfs from given start coordinates
-        start_x, start_y = self.entry
+        # start running dfs
+        start_x = self.rng.randint(0, self.width - 1)
+        start_y = self.rng.randint(0, self.height - 1)
         dfs(start_x, start_y)
 
     def _generate_prim(
             self, visited: list[list[bool]],
             config: dict[str, Any], color: str, mode: str) -> None:
-        start_x, start_y = self.entry
+        """
+        Generates maze using Prim's algorithm.
+
+        Expands a growing region by randomly selecting frontier walls.
+
+        Args:
+            visited: Grid tracking visited cells.
+            config: Configuration dictionary.
+            color: Rendering color.
+            mode: Display mode.
+
+        Returns:
+            None
+        """
+        start_x = self.rng.randint(0, self.width - 1)
+        start_y = self.rng.randint(0, self.height - 1)
         visited[start_y][start_x] = True
         walls: list[tuple[int, int, int, int, int, int]] = []
 
@@ -248,12 +369,27 @@ class MazeGenerator:
                 visited[ny][nx] = True
                 add_walls(nx, ny)
 
-    def _add_loops(self) -> None:
+    def _add_loops(
+            self,
+            config: dict[str, Any],
+            color: str,
+            mode: str
+    ) -> None:
         """
-        Randomly removes walls to create multiple paths, avoiding 3x3 areas.
+        Adds random loops to create a non-perfect maze.
+
+        Removes walls while preventing invalid open regions.
+
+        Args:
+            config: Configuration dictionary.
+            color: Rendering color.
+            mode: Display mode.
+
+        Returns:
+            None
         """
-        # remove walls of 10% of the maze cells
-        extra_removals = (self.width * self.height) // 3
+        # remove walls of 50% of the maze cells
+        extra_removals = (self.width * self.height) // 2
         attempts = 0
         removed = 0
 
@@ -286,10 +422,20 @@ class MazeGenerator:
                     self.grid[y + dy][x + dx] ^= opp
                     removed += 1
 
+                    from app import pre_render
+                    pre_render(config, self, mode, color)
+            # print(f"TRY: {attempts}, REMOVED: {removed}")
+
     def _creates_3x3_open_area(self, x: int, y: int) -> bool:
         """
-        Returns True if removing a wall around (x, y)
-        would create a fully open 3x3 area.
+        Checks whether removing a wall creates a fully open 3x3 area.
+
+        Args:
+            x: X coordinate.
+            y: Y coordinate.
+
+        Returns:
+            True if a 3x3 open region would be formed, otherwise False.
         """
         # check top-left corner of possible 3x3 blocks around (x, y)
         # -2 means look 2 cells up, -1 means look 1 cell up,
@@ -322,11 +468,17 @@ class MazeGenerator:
 
     def to_hex(self) -> list[str]:
         """
-        This function:
-        - Takes each row of the maze, e.g. [15, 10, 3]
-        - Converts numbers into hex digits e.g. ["F", "A", 3]
-        - Joins them into a string -> "FA3"
-        - Returns list of strings -> ["FA3", ...]
+        Converts the maze grid into hexadecimal string format.
+
+        Returns:
+            List of strings representing each row in hex.
+
+        Notes:
+            This function:
+            - Takes each row of the maze, e.g. [15, 10, 3]
+            - Converts numbers into hex digits e.g. ["F", "A", 3]
+            - Joins them into a string -> "FA3"
+            - Returns list of strings -> ["FA3", ...]
         """
         lines: list[str] = []
         for row in self.grid:
@@ -339,6 +491,13 @@ class MazeGenerator:
 
     def find_shortest_path(self) -> str:
         """
+        Finds the shortest path from entry to exit using BFS.
+
+        Returns:
+            A string representing directions (N, E, S, W).
+            Returns empty string if no path exists.
+
+        Notes:
         Returns the shortest path from entry to exit
         as a string of N,E,S,W
 

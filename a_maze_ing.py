@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+Main entry point for the A-Maze-ing project.
+
+This module provides a CLI interface for generating, displaying,
+and interacting with a maze generator system.
+"""
 
 import sys
 import random
@@ -7,6 +13,25 @@ from app import (read_config, generate_output, display_maze, toggle_perfect,
 
 
 def main() -> None:
+    """
+    Run the main interactive maze application.
+
+    This function:
+    - Loads configuration file from command-line argument
+    - Generates initial maze
+    - Provides an interactive menu for:
+        - regenerating maze
+        - toggling shortest path display
+        - changing wall colours
+        - switching day/night mode
+        - switching algorithms
+        - toggling perfect/non-perfect maze
+        - viewing configuration
+    - Handles runtime errors gracefully
+
+    Returns:
+        None
+    """
     if len(sys.argv) != 2:
         print("Usage: python3 a_maze_ing.py config.txt")
         return
@@ -27,16 +52,18 @@ def main() -> None:
         output = generate_output(config_file, current_wall_color, mode)
         while True:
             config = read_config(config_file)
+            perfectness = "perfect" if config["PERFECT"] else "non-perfect"
             print("=== A-Maze-ing ===")
             print("1. Regenerate new maze")
-            print("2. Show/hide path from entry to exit")
-            print("3. Rotate maze colours")
-            print(f"4. Day/Night mode: {mode}")
-            print(f"5. Algorithm: {config['ALGORITHM']}")
-            print(f"6. Perfect/Non-perfect maze: {config['PERFECT']}")
+            print("2. Show/hide shortest path from entry to exit")
+            print("3. Change maze wall colours")
+            print(f"4. Toggle day/night mode: {mode}")
+            print(f"5. Switch algorithm: {config['ALGORITHM']}")
+            print(f"6. Toggle maze loops: {perfectness}")
             print("7. Show configurations")
             print("8. Quit")
             choice = input("Choice? (1-8): ")
+
             if choice == "1":
                 show_path = False
                 output = generate_output(
@@ -52,6 +79,7 @@ def main() -> None:
             elif choice == "3":
                 color_index = (color_index + 1) % len(wall_colors)
                 current_wall_color = wall_colors[color_index]
+                print("\033[2J\033[H", end="")
                 display_maze(output, current_wall_color, mode,
                              show_path=show_path)
 
@@ -78,6 +106,10 @@ def main() -> None:
 
             elif choice == "8":
                 break
+
+            else:
+                print("Unknown command. "
+                      "Please input number only between 1-8\n")
 
     except ConfigError as e:
         print("Configurations Error:", e)
