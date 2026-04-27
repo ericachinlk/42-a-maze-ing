@@ -250,13 +250,13 @@ class MazeGenerator:
             None
         """
         if not isinstance(width, int) or width <= 0:
-            raise MazeError("width must be positive integer")
+            raise MazeError("Width must be positive integer")
     
         if not isinstance(height, int) or height <= 0:
-            raise MazeError("height must be positive integer")
+            raise MazeError("Height must be positive integer")
     
         if algorithm not in ("dfs", "prim"):
-            raise MazeError("algorithm must be 'dfs' or 'prim'")
+            raise MazeError("Algorithm must be 'dfs' or 'prim'")
 
         if (
             not isinstance(entry, tuple)
@@ -264,10 +264,10 @@ class MazeGenerator:
             or len(entry) != 2
             or len(exit) != 2
         ):
-            raise MazeError("entry and exit must be (x, y) tuples")
+            raise MazeError("Entry and exit must be (x, y) tuples")
         
         if entry == exit:
-            raise MazeError("ENTRY and EXIT cannot be the same")
+            raise MazeError("Entry and exit cannot be the same")
 
         if width > 1000 or height > 1000:
             raise MazeError("Maze dimensions too large")
@@ -276,14 +276,14 @@ class MazeGenerator:
         xx, xy = exit
 
         if not all(isinstance(v, int) for v in (ex, ey, xx, xy)):
-            raise MazeError("entry and exit coordinates must be integers")
+            raise MazeError("Entry and exit coordinates must be integers")
         if not (0 <= ex < width and 0 <= ey < height):
-            raise MazeError("entry out of bounds")
+            raise MazeError("Entry out of bounds")
         if not (0 <= xx < width and 0 <= xy < height):
-            raise MazeError("exit out of bounds")
+            raise MazeError("Exit out of bounds")
         
         if seed is not None and not isinstance(seed, int):
-            raise MazeError("seed must be an integer or None")
+            raise MazeError("Seed must be an integer or None")
     
     def apply_42_pattern(self, visited: list[list[bool]]) -> None:
         """
