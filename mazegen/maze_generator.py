@@ -302,7 +302,7 @@ class MazeGenerator:
         # the '42' pattern will take 5x7 grid
         # 1 extra of space around it to allow carve paths around
         if self.width < 8 or self.height < 6:
-            print("Maze too small to apply '42' pattern")
+            print("Error: Maze too small to apply '42' pattern")
             return
 
         # list of coordinates that form shapes of '4' and '2' (y, x)
