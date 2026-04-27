@@ -200,19 +200,13 @@ def read_config(filename: str) -> dict[str, Any]:
     """
     Read and fully parse configuration file into typed values.
 
-    Performs:
-    - type conversion
-    - validation of maze constraints
-    - entry/exit boundary checks
+    Performs type conversions.
 
     Args:
         filename (str): Path to config file.
 
     Returns:
         dict[str, Any]: Fully parsed configuration.
-
-    Raises:
-        ConfigError: If any validation fails.
     """
     raw = file_validator(filename)
 
@@ -224,22 +218,6 @@ def read_config(filename: str) -> dict[str, Any]:
     seed = parse_seed(raw.get("SEED"), "SEED")
     algorithm = parse_algo(raw.get("ALGORITHM"), "ALGORITHM")
     output_file = parse_output(raw["OUTPUT_FILE"], "OUTPUT FILE")
-
-    # validation for valid maze
-    if width <= 0 or height <= 0:
-        raise ConfigError("WIDTH and HEIGHT must be positive")
-
-    if width > 1000 or height > 1000:
-        raise ConfigError("Maze dimensions too large")
-
-    if entry == exit:
-        raise ConfigError("ENTRY and EXIT cannot be the same")
-
-    if not (0 <= entry[0] < width and 0 <= entry[1] < height):
-        raise ConfigError("ENTRY is out of bounds")
-
-    if not (0 <= exit[0] < width and 0 <= exit[1] < height):
-        raise ConfigError("EXIT is out of bounds")
 
     return {
         "WIDTH": width,
