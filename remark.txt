@@ -1,0 +1,15 @@
+Rules for pytest:
+* file must start with test_
+* function must start with test_
+
+To use the pytest:
+- pip install pytest
+- from project root: pytest -v
+
+To build mazegen package:
+- make install (1st time only)
+- make dev-tool
+- make build
+
+To install mazegen package:
+- pip install dist/...whl
