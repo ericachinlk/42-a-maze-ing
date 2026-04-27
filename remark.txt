@@ -8,7 +8,7 @@ To use the pytest:
 
 To build mazegen package:
 - make install (1st time only)
-- make dev-tool
+- make dev-tools
 - make build
 
 To install mazegen package:
