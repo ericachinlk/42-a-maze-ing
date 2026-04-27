@@ -8,8 +8,12 @@ and interacting with a maze generator system.
 
 import sys
 import random
+import os
 from app import (read_config, generate_output, display_maze, toggle_perfect,
                  show_config, set_algorithm, ConfigError, RenderError)
+from mazegen import MazeError
+
+DEBUG = os.getenv("DEBUG") == "1"
 
 
 def main() -> None:
@@ -62,6 +66,10 @@ def main() -> None:
             print(f"6. Toggle maze loops: {perfectness}")
             print("7. Show configurations")
             print("8. Quit")
+
+            if DEBUG:
+                breakpoint()
+
             choice = input("Choice? (1-8): ")
 
             if choice == "1":
@@ -118,6 +126,8 @@ def main() -> None:
         print("\033[2J\033[H", end="")
         print("Rendering Error:", e)
         sys.exit()
+    except MazeError as e:
+        print("Maze Generation Error:", e)
 
 
 if __name__ == "__main__":
