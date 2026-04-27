@@ -105,23 +105,27 @@ ALGORITHM=dfs
 ### 1. Setup environment
 
 ```bash
-make install```
+make install
+```
 
 ### 2. Run program
 
 ```bash
-make run```
+make run
+```
 
 ### 3. Debug mode
 
 ```bash
-make debug```
+make debug
+```
 
 ### 4. Build package (for reuse)
 
 ```bash
 make dev-tools
-make build```
+make build
+```
 
 ### 5. Generated files
 
