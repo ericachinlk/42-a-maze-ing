@@ -1,12 +1,68 @@
 import random
 from collections import deque
-from typing import Any
+from typing import Any, Protocol
 import os
+
+"""
+Maze generation engine supporting DFS and Prim algorithms.
+
+This module provides:
+- MazeGenerator: core generation logic
+- Renderer protocol: optional rendering hooks
+
+The generator is independent of UI and can be used standalone.
+"""
 
 DEBUG = os.getenv("DEBUG") == "1"
 
-# Bitmask directions
+# Bitmask directions used for wall encoding in each cell
 N, E, S, W = 1, 2, 4, 8
+
+
+class Renderer(Protocol):
+    """
+    Protocol interface for rendering hooks used during maze generation.
+
+    This allows external modules to inject rendering logic without
+    coupling MazeGenerator to any UI or CLI system.
+    """
+    def pre_render(
+            self,
+            config: dict[str, Any],
+            maze: "MazeGenerator",
+            mode: str,
+            color: str = ""
+    ) -> None:
+        """
+        Called during maze generation to render intermediate states.
+
+        Args:
+            config: Configuration dictionary.
+            maze: Current MazeGenerator instance.
+            mode: Display mode (e.g. "day", "night").
+            color: Wall color escape sequence.
+        """
+        ...
+
+    def display_maze(
+            self,
+            filename: str,
+            color: str,
+            mode: str,
+            show_path: bool = False,
+            final: bool = True
+    ) -> None:
+        """
+        Displays the final maze output.
+
+        Args:
+            filename: Output file containing maze data.
+            color: Wall color scheme.
+            mode: Display mode.
+            show_path: Whether to show solution path.
+            final: Whether this is final render frame.
+        """
+        ...
 
 
 class MazeGenerator:
@@ -91,7 +147,7 @@ class MazeGenerator:
             height (int): Maze height in cells.
             entry (tuple[int, int]): Starting coordinate (x, y).
             exit (tuple[int, int]): Ending coordinate (x, y).
-            seed (int | None): Random seed for reproducibility.
+            seed (int): Random seed for reproducibility.
             perfect (bool): If True, generates a perfect maze (no loops).
             algorithm (str): "dfs" or "prim".
 
@@ -187,9 +243,10 @@ class MazeGenerator:
     def generate(
             self,
             config: dict[str, Any],
-            color: str,
-            mode: str,
-            use_pattern: bool = False
+            color: str = "",
+            mode: str = "day",
+            use_pattern: bool = False,
+            renderer: Renderer | None = None
     ) -> None:
 
         """
@@ -199,7 +256,7 @@ class MazeGenerator:
         pattern constraints and loop removal.
 
         Args:
-            config: Configuration dictionary.
+            config: Configuration dictionary
             color: Rendering color code.
             mode: Display mode (e.g. "day" or "night").
             use_pattern: If True, applies embedded pattern constraints.
@@ -220,24 +277,40 @@ class MazeGenerator:
             self.apply_42_pattern(visited)
 
         if self.algorithm == "dfs":
-            self._generate_dfs(visited, config, color, mode)
+            self._generate_dfs(visited, config, color, mode, renderer)
         elif self.algorithm == "prim":
-            self._generate_prim(visited, config, color, mode)
+            self._generate_prim(visited, config, color, mode, renderer)
 
         # handle PERFECT=False (multiple paths instead of just one)
         if not self.perfect:
-            self._add_loops(config, color, mode)
+            self._add_loops(config, color, mode, renderer)
 
         if DEBUG:
             breakpoint()
 
         # print final frame
-        from app import display_maze
-        display_maze(config["OUTPUT_FILE"], color, mode)
+        # from app import display_maze
+        # display_maze(config["OUTPUT_FILE"], color, mode)
+        if renderer:
+            renderer.display_maze(config["OUTPUT_FILE"], color, mode)
 
     def _generate_dfs(
             self, visited: list[list[bool]],
-            config: dict[str, Any], color: str, mode: str) -> None:
+            config: dict[str, Any], color: str, mode: str,
+            renderer: Renderer | None = None) -> None:
+        """
+        Generates maze using Depth-First Search algorithm.
+
+        This method delegates to a recursive DFS function that carves
+        paths by backtracking through unvisited cells.
+
+        Args:
+            visited: Grid tracking visited cells.
+            config: Configuration dictionary.
+            color: Rendering color code.
+            mode: Display mode.
+            renderer: Optional renderer for visualization.
+        """
         def dfs(x: int, y: int) -> None:
             """
             Generates maze using randomized Depth-First Search.
@@ -308,8 +381,10 @@ class MazeGenerator:
                     self.grid[y][x] ^= wall
                     self.grid[ny][nx] ^= opposite
 
-                    from app import pre_render
-                    pre_render(config, self, mode, color)
+                    # from app import pre_render
+                    # pre_render(config, self, mode, color)
+                    if renderer:
+                        renderer.pre_render(config, self, mode, color)
 
                     # move to next cell and repeat
                     dfs(nx, ny)
@@ -321,7 +396,8 @@ class MazeGenerator:
 
     def _generate_prim(
             self, visited: list[list[bool]],
-            config: dict[str, Any], color: str, mode: str) -> None:
+            config: dict[str, Any], color: str, mode: str,
+            renderer: Renderer | None = None) -> None:
         """
         Generates maze using Prim's algorithm.
 
@@ -342,6 +418,11 @@ class MazeGenerator:
         walls: list[tuple[int, int, int, int, int, int]] = []
 
         def add_walls(x: int, y: int) -> None:
+            """
+            Adds frontier walls of the current cell to the candidate list.
+
+            This supports Prim's algorithm by expanding the maze frontier.
+            """
             directions = [
                 (0, -1, N, S), (1, 0, E, W), (0, 1, S, N), (-1, 0, W, E)]
             for dx, dy, wall, opposite in directions:
@@ -363,8 +444,10 @@ class MazeGenerator:
                 self.grid[y][x] ^= wall
                 self.grid[ny][nx] ^= opposite
 
-                from app import pre_render
-                pre_render(config, self, mode, color)
+                # from app import pre_render
+                # pre_render(config, self, mode, color)
+                if renderer:
+                    renderer.pre_render(config, self, mode, color)
 
                 visited[ny][nx] = True
                 add_walls(nx, ny)
@@ -373,7 +456,8 @@ class MazeGenerator:
             self,
             config: dict[str, Any],
             color: str,
-            mode: str
+            mode: str,
+            renderer: Renderer | None = None
     ) -> None:
         """
         Adds random loops to create a non-perfect maze.
@@ -384,6 +468,7 @@ class MazeGenerator:
             config: Configuration dictionary.
             color: Rendering color.
             mode: Display mode.
+            renderer: Optional renderer for visualization updates.
 
         Returns:
             None
@@ -422,9 +507,10 @@ class MazeGenerator:
                     self.grid[y + dy][x + dx] ^= opp
                     removed += 1
 
-                    from app import pre_render
-                    pre_render(config, self, mode, color)
-            # print(f"TRY: {attempts}, REMOVED: {removed}")
+                    # from app import pre_render
+                    # pre_render(config, self, mode, color)
+                    if renderer:
+                        renderer.pre_render(config, self, mode, color)
 
     def _creates_3x3_open_area(self, x: int, y: int) -> bool:
         """
@@ -436,6 +522,9 @@ class MazeGenerator:
 
         Returns:
             True if a 3x3 open region would be formed, otherwise False.
+
+        Notes:
+            Only checks interior-safe 3x3 blocks; edges are skipped.
         """
         # check top-left corner of possible 3x3 blocks around (x, y)
         # -2 means look 2 cells up, -1 means look 1 cell up,
@@ -492,6 +581,9 @@ class MazeGenerator:
     def find_shortest_path(self) -> str:
         """
         Finds the shortest path from entry to exit using BFS.
+
+        Args:
+            None
 
         Returns:
             A string representing directions (N, E, S, W).

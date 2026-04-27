@@ -1,9 +1,9 @@
 from mazegen import MazeGenerator
-from typing import Dict, Any
+from typing import Any
 import time
 
 
-def pre_render(config: Dict[str, Any],
+def pre_render(config: dict[str, Any],
                maze: MazeGenerator,
                mode: str,
                color: str = "") -> None:

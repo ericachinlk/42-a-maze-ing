@@ -1,5 +1,4 @@
 from mazegen import MazeGenerator
-from app import read_config, render_maze
 from typing import Optional, Any
 
 
@@ -10,23 +9,34 @@ def generate_output(
         seed: Optional[int] = None,
 ) -> Any:
     """
-    Generate a maze based on configuration and write it to output file.
+    Generate a maze from a configuration file and write the result to disk.
 
-    This function:
-    - Reads configuration file
-    - Creates MazeGenerator instance
-    - Generates maze using selected algorithm
-    - Writes final maze output to file
+    This function serves as the main orchestration layer of the application.
+    It reads the configuration, initializes the maze generator, runs the
+    generation process, and writes the final output to a file.
+
+    Workflow:
+        1. Load configuration from file
+        2. Determine random seed (override if provided)
+        3. Initialize MazeGenerator instance
+        4. Generate maze using selected algorithm
+        5. Render via AppRenderer (optional animation)
+        6. Write final maze output to file
 
     Args:
-        config_file (str): Path to configuration file.
-        color (str): Wall color escape code.
-        mode (str): Display mode ("day" or "night").
-        seed (Optional[int]): Override seed for deterministic generation.
+        config_file (str): Path to the configuration file containing maze
+            parameters such as width, height, entry, exit, algorithm, etc.
+        color (str, optional): ANSI escape code used for wall coloring.
+            Defaults to "".
+        mode (str, optional): Display mode for rendering ("day" or "night").
+            Defaults to "day".
+        seed (Optional[int], optional): Overrides the configuration seed
+            for deterministic generation. If None, uses config seed.
 
     Returns:
-        Any: Output filename where maze is saved.
+        Any: The output filename where the generated maze is written.
     """
+    from app.config import read_config
     config = read_config(config_file)
     seed_value = seed if seed is not None else config["SEED"]
 
@@ -41,7 +51,9 @@ def generate_output(
         config["PERFECT"],
         config["ALGORITHM"]
     )
-    maze.generate(config, color, mode, use_pattern=True)
+    from app.app_renderer import AppRenderer
+    renderer = AppRenderer()
+    maze.generate(config, color, mode, use_pattern=True, renderer=renderer)
 
     write_output(
         config["OUTPUT_FILE"],
@@ -61,15 +73,26 @@ def display_maze(
         final: bool = True
 ) -> None:
     """
-    Render maze output in terminal.
+    Render a maze file to the terminal.
+
+    This function reads a generated maze file and displays it using
+    the rendering system. It supports optional path visualization and
+    different display modes.
 
     Args:
-        filename (str): Maze output file.
-        color (str): Wall color scheme.
+        filename (str): Path to the maze output file.
+        color (str): ANSI escape code used for wall coloring.
         mode (str): Display mode ("day" or "night").
-        show_path (bool): Whether to display shortest path.
-        final (bool): Whether this is final render or animation frame.
+        show_path (bool, optional): If True, overlays the shortest path
+            onto the maze. Defaults to False.
+        final (bool, optional): Indicates whether this is the final frame
+            of rendering (affects formatting/animation behavior).
+            Defaults to True.
+
+    Returns:
+        None
     """
+    from app.render import render_maze
     print("\033[H\033[J", end="")
     print(render_maze(filename, color, show_path, final, mode))
 
@@ -81,19 +104,29 @@ def write_output(
         exit: tuple[int, int]
 ) -> None:
     """
-    Write maze data and metadata to output file.
+    Write the generated maze and metadata to a file.
 
-    File format:
-    - Hex grid representation
-    - Entry coordinates
-    - Exit coordinates
-    - Shortest path string
+    The output file contains:
+        - Hexadecimal maze grid representation
+        - Entry coordinate
+        - Exit coordinate
+        - Shortest path string (if exists)
+
+    File format example:
+        <hex grid lines>
+
+        (entry_x, entry_y)
+        (exit_x, exit_y)
+        <path string>
 
     Args:
         filename (str): Output file path.
-        maze (MazeGenerator): Generated maze object.
-        entry (tuple[int, int]): Entry coordinate.
-        exit (tuple[int, int]): Exit coordinate.
+        maze (MazeGenerator): Generated maze instance.
+        entry (tuple[int, int]): Entry coordinate (x, y).
+        exit (tuple[int, int]): Exit coordinate (x, y).
+
+    Returns:
+        None
     """
     path = maze.find_shortest_path()
 
