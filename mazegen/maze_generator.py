@@ -322,18 +322,24 @@ class MazeGenerator:
         # // divide gives integer, / divide gives float
         offset_y = (self.height - 5) // 2
         offset_x = (self.width - 7) // 2
-
+        
+        pattern_cells = set()
         for dy, dx in p4 + p2:
             # go into the actual coord of shape 42
             py, px = offset_y + dy, offset_x + dx
-            # no blocking entry and exit
-            if (px, py) != self.entry and (px, py) != self.exit:
-                # make all the cells in 42 to have all walls blocked
-                self.grid[py][px] = 15
-                # mark these cells as visited for DFS to go around later
-                visited[py][px] = True
-                # explicitly track these cells with pattern_cells
-                self.pattern_cells.add((px, py))
+            pattern_cells.add((px, py)
+        
+        if self.entry in pattern_cells or self.exit in pattern_cells:
+            raise MazeError("Entry/Exit cannot overlap pattern region")
+
+        for dy, dx in p4 + p2:
+            py, px = offset_y + dy, offset_x + dx
+            # make all the cells in 42 to have all walls blocked
+            self.grid[py][px] = 15
+            # mark these cells as visited for DFS to go around later
+            visited[py][px] = True
+            # explicitly track these cells with pattern_cells
+            self.pattern_cells.add((px, py))
 
     def generate(
             self,
