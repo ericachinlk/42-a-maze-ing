@@ -377,41 +377,31 @@ class MazeGenerator:
                 row.append(False)
             visited.append(row)
 
+        warning_msg = None
         try:
             # Apply pattern and mark as visited so DFS goes AROUND them
             if use_pattern:
                 self.apply_42_pattern(visited)
-
-            if self.algorithm == "dfs":
-                self._generate_dfs(visited, config, color, mode, renderer)
-            elif self.algorithm == "prim":
-                self._generate_prim(visited, config, color, mode, renderer)
-
-            # handle PERFECT=False (multiple paths instead of just one)
-            if not self.perfect:
-                self._add_loops(config, color, mode, renderer)
-
-            # print final frame
-            if renderer:
-                output = config.get("OUTPUT_FILE", "maze.txt")
-                renderer.display_maze(output, color, mode)
-
         except MazeError as e:
-            if self.algorithm == "dfs":
-                self._generate_dfs(visited, config, color, mode, renderer)
-            elif self.algorithm == "prim":
-                self._generate_prim(visited, config, color, mode, renderer)
+            warning_msg = str(e)
 
-            # handle PERFECT=False (multiple paths instead of just one)
-            if not self.perfect:
-                self._add_loops(config, color, mode, renderer)
+        if self.algorithm == "dfs":
+            self._generate_dfs(visited, config, color, mode, renderer)
+        elif self.algorithm == "prim":
+            self._generate_prim(visited, config, color, mode, renderer)
 
-            # print final frame
-            if renderer:
-                output = config.get("OUTPUT_FILE", "maze.txt")
-                renderer.display_maze(output, color, mode)
+        # handle PERFECT=False (multiple paths instead of just one)
+        if not self.perfect:
+            self._add_loops(config, color, mode, renderer)
 
-            print("Error:", e)
+        # print final frame
+        if renderer:
+            output = config.get("OUTPUT_FILE", "maze.txt")
+            renderer.display_maze(output, color, mode)
+
+        # print warning if 42 pattern not applied
+        if warning_msg:
+            print(f"\n[WARNING] {warning_msg}")
 
     def _generate_dfs(
             self, visited: list[list[bool]],
