@@ -304,7 +304,7 @@ class MazeGenerator:
         # the '42' pattern will take 5x7 grid
         # 1 extra of space around it to allow carve paths around
         if self.width < 8 or self.height < 6:
-            raise MazeError("Maze too small to apply '42' pattern")
+            raise MazeError("Maze too small to apply pattern")
 
         # list of coordinates that form shapes of '4' and '2' (y, x)
         # this will take up max 5 rows (height) and 7 columns (width)
@@ -331,8 +331,7 @@ class MazeGenerator:
             pattern_cells.add((px, py))
 
         if self.entry in pattern_cells or self.exit in pattern_cells:
-            raise MazeError("The '42' pattern is not applied because "
-                            "entry/exit overlap pattern region")
+            raise MazeError("Entry/exit overlap pattern region")
 
         for dy, dx in p4 + p2:
             py, px = offset_y + dy, offset_x + dx
@@ -401,7 +400,7 @@ class MazeGenerator:
 
         # print warning if 42 pattern not applied
         if warning_msg:
-            print(f"\n[WARNING] {warning_msg}")
+            print(f"\n[WARNING] '42' pattern skipped: {warning_msg}")
 
     def _generate_dfs(
             self, visited: list[list[bool]],
