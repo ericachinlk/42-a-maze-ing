@@ -19,6 +19,7 @@ dist/
 .pytest_cache/
 .coverage
 htmlcov/
+tests/
 
 # Project outputs
 maze.txt
