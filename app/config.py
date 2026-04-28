@@ -231,20 +231,6 @@ def read_config(filename: str) -> dict[str, Any]:
     }
 
 
-def show_config(filename: str) -> None:
-    """
-    Display current configuration in formatted table style.
-
-    Args:
-        filename (str): Path to config file.
-    """
-    config = read_config(filename)
-    print("\n┌────── Active Configurations ──────┐")
-    for k, v in config.items():
-        print(f"│ {k:<12} : {str(v):<18} │")
-    print("└───────────────────────────────────┘\n")
-
-
 def set_algorithm(
         filename: str,
         current_algorithm: str,

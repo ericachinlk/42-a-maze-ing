@@ -111,8 +111,7 @@ def test_perfect_maze_connectivity():
 
     reachable = bfs_reachable_count(maze)
 
-    assert reachable == maze.width * maze.height, 
-        "Perfect maze should connect all cells"
+    assert reachable == maze.width * maze.height, "Maze is not fully connected"
 
 
 # -------------------------
@@ -156,8 +155,7 @@ def test_seed_determinism():
     maze1.generate()
     maze2.generate()
 
-    assert maze1.grid == maze2.grid, 
-        "Same seed should produce identical mazes"
+    assert maze1.grid == maze2.grid, "Same seed should produce identical mazes"
 
 
 # -------------------------
@@ -170,8 +168,7 @@ def test_seed_variation():
     maze1.generate()
     maze2.generate()
 
-    assert maze1.grid != maze2.grid, 
-        "Different seeds should produce different mazes"
+    assert maze1.grid != maze2.grid, "Different seeds should produce different mazes"
 
 
 # -------------------------

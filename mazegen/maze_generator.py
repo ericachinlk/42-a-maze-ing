@@ -157,7 +157,7 @@ class MazeGenerator:
     ) -> None:
         """
         Initialise a maze generator instance.
-        
+
         Sets up the maze dimensions, generation
         parameters, and internal grid structure.
         All parameters are validated before maze creation.
@@ -170,10 +170,10 @@ class MazeGenerator:
             seed (Optional[int]): Random seed for reproducibility.
             perfect (bool): If True, generates a perfect maze (no loops).
             algorithm (str): "dfs" or "prim".
-        
+
         Raises:
             MazeError: If any input parameters are invalid.
-        
+
         Notes:
             self.width, self.height store size of maze
             self.grid creates the maze
@@ -195,7 +195,10 @@ class MazeGenerator:
             if only W is closed - 1000 ~ 8
         """
         self._validate(width, height, entry, exit, algorithm, seed)
-        
+
+        if seed is None:
+            seed = random.randint(1, 1000)
+
         self.width = width
         self.height = height
         self.entry = entry
@@ -204,12 +207,8 @@ class MazeGenerator:
         self.perfect = perfect
         self.algorithm = algorithm
         self.pattern_cells: set[tuple[int, int]] = set()
-        
-        if self.seed is None:
-            seed_val = random.randint(1, 1000)
-        else:
-            seed_val = self.seed
-        self.rng = random.Random(seed_val)
+
+        self.rng = random.Random(self.seed)
 
         # Initialize grid (all walls closed = 15)
         self.grid: list[list[int]] = []
@@ -236,25 +235,26 @@ class MazeGenerator:
         or unsupported algorithms.
 
         Args:
-            width (int): Width of the maze in cells. Must be a positive integer.
-            height (int): Height of the maze in cells. Must be a positive integer.
-            entry (tuple[int, int]): Starting coordinate (x, y).
-            exit (tuple[int, int]): Ending coordinate (x, y).
-            algorithm (str): Maze generation algorithm. Must be either dfs" or "prim".
-            seed (int | None): Must be an integer or None.
+            width: Width of the maze in cells. Must be a positive integer.
+            height: Height of the maze in cells. Must be a positive integer.
+            entry: Starting coordinate (x, y).
+            exit: Ending coordinate (x, y).
+            algorithm: Maze generation algorithm. Must be dfs" or "prim".
+            seed: Must be an integer or None.
 
         Raises:
-            MazeError: If any parameter is invalid, out of bounds, or unsupported.
+            MazeError: If any parameter is invalid, out of bounds,
+            or unsupported.
 
         Returns:
             None
         """
         if not isinstance(width, int) or width <= 0:
             raise MazeError("Width must be positive integer")
-    
+
         if not isinstance(height, int) or height <= 0:
             raise MazeError("Height must be positive integer")
-    
+
         if algorithm not in ("dfs", "prim"):
             raise MazeError("Algorithm must be 'dfs' or 'prim'")
 
@@ -265,13 +265,15 @@ class MazeGenerator:
             or len(exit) != 2
         ):
             raise MazeError("Entry and exit must be (x, y) tuples")
-        
-        if entry == exit:
-            raise MazeError("Entry and exit cannot be the same")
+
+        # Allow entry == exit for trivial maze (e.g. 1x1)
+        if entry == exit and not (width == 1 and height == 1):
+            raise MazeError("Entry and exit cannot be the same "
+                            "for non-trivial maze")
 
         if width > 1000 or height > 1000:
             raise MazeError("Maze dimensions too large")
-        
+
         ex, ey = entry
         xx, xy = exit
 
@@ -281,10 +283,10 @@ class MazeGenerator:
             raise MazeError("Entry out of bounds")
         if not (0 <= xx < width and 0 <= xy < height):
             raise MazeError("Exit out of bounds")
-        
+
         if seed is not None and not isinstance(seed, int):
             raise MazeError("Seed must be an integer or None")
-    
+
     def apply_42_pattern(self, visited: list[list[bool]]) -> None:
         """
         Inserts a fixed "42" obstacle pattern into the maze.
@@ -322,15 +324,17 @@ class MazeGenerator:
         # // divide gives integer, / divide gives float
         offset_y = (self.height - 5) // 2
         offset_x = (self.width - 7) // 2
-        
+
         pattern_cells = set()
         for dy, dx in p4 + p2:
             # go into the actual coord of shape 42
             py, px = offset_y + dy, offset_x + dx
-            pattern_cells.add((px, py)
-        
+            pattern_cells.add((px, py))
+
         if self.entry in pattern_cells or self.exit in pattern_cells:
-            raise MazeError("Entry/Exit cannot overlap pattern region")
+            print("Error: The '42' pattern is not applied because "
+                  "entry/exit overlap pattern region")
+            return
 
         for dy, dx in p4 + p2:
             py, px = offset_y + dy, offset_x + dx

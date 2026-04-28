@@ -7,7 +7,7 @@ def generate_output(
         color: str = "",
         mode: str = "day",
         seed: Optional[int] = None,
-) -> str:
+) -> tuple[MazeGenerator, str]:
     """
     Generate a maze from a configuration file and write the result to disk.
 
@@ -61,14 +61,14 @@ def generate_output(
         use_pattern=True,
         renderer=renderer)
 
+    output: str = config["OUTPUT_FILE"]
     write_output(
-        config["OUTPUT_FILE"],
+        output,
         maze,
         config["ENTRY"],
         config["EXIT"]
     )
-
-    return config.get("OUTPUT_FILE", "maze.txt")
+    return maze, output
 
 
 def display_maze(
@@ -139,7 +139,7 @@ def write_output(
         with open(filename, "w") as f:
             for line in maze.to_hex():
                 f.write(line + "\n")
-    
+
             f.write("\n")
             f.write(f"{entry[0]},{entry[1]}\n")
             f.write(f"{exit[0]},{exit[1]}\n")

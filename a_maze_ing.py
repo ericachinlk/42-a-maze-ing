@@ -10,7 +10,7 @@ import sys
 import random
 import os
 from app import (read_config, generate_output, display_maze, toggle_perfect,
-                 show_config, set_algorithm, ConfigError, RenderError)
+                 set_algorithm, ConfigError, RenderError)
 from mazegen import MazeError
 
 DEBUG = os.getenv("DEBUG") == "1"
@@ -42,18 +42,20 @@ def main() -> None:
     config_file = sys.argv[1]
 
     wall_colors = [
-        "\033[38;5;240m",
-        "\033[38;5;67m",
-        "\033[38;5;108m",
-        "\033[38;5;137m",
-        "\033[38;5;131m"]
+        "\033[38;5;240m",  # Dark gray
+        "\033[38;5;67m",   # Medium blue
+        "\033[38;5;108m",  # Soft green
+        "\033[38;5;137m",  # Brown
+        "\033[38;5;131m"   # Muted red
+    ]
     color_index = 0
     show_path = False
     current_wall_color = wall_colors[color_index]
 
     try:
         mode = "day"
-        output = generate_output(config_file, current_wall_color, mode)
+        maze, output = generate_output(config_file, current_wall_color, mode)
+        seed_val = maze.seed
         while True:
             config = read_config(config_file)
             perfectness = "perfect" if config["PERFECT"] else "non-perfect"
@@ -68,15 +70,25 @@ def main() -> None:
             print("8. Quit")
 
             if DEBUG:
+                print("\n[DEBUG MAZE]")
+                print("Size:", maze.width, maze.height)
+                print("Entry:", maze.entry)
+                print("Exit:", maze.exit)
+                print("Algorithm:", maze.algorithm)
+                print("Seed:", maze.seed)
+                print("\nGrid (raw):")
+                for row in maze.grid:
+                    print(row)
                 breakpoint()
 
             choice = input("Choice? (1-8): ")
 
             if choice == "1":
+                seed_val = random.randint(1, 1000)
                 show_path = False
-                output = generate_output(
+                _, output = generate_output(
                     config_file, current_wall_color, mode,
-                    seed=random.randint(1, 1000))
+                    seed=seed_val)
 
             elif choice == "2":
                 show_path = not show_path
@@ -102,15 +114,21 @@ def main() -> None:
                 set_algorithm(config_file, config["ALGORITHM"], val)
 
                 show_path = False
-                output = generate_output(config_file, current_wall_color, mode)
+                _, output = generate_output(
+                    config_file, current_wall_color, mode, seed=seed_val)
 
             elif choice == "6":
                 toggle_perfect(config_file)
                 show_path = False
-                output = generate_output(config_file, current_wall_color, mode)
+                _, output = generate_output(
+                    config_file, current_wall_color, mode, seed=seed_val)
 
             elif choice == "7":
-                show_config(config_file)
+                config["ACTIVE_SEED"] = seed_val
+                print("\n┌────── Active Configurations ──────┐")
+                for k, v in config.items():
+                    print(f"│ {k:<12} : {str(v):<18} │")
+                print("└───────────────────────────────────┘\n")
 
             elif choice == "8":
                 break

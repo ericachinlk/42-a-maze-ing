@@ -26,14 +26,14 @@ clean:
 	find . -type f -name "*.pyc" -delete
 
 lint:
-	flake8 . --exclude=venv,__pycache__,.mypy_cache
+	flake8 . --exclude=venv,__pycache__,.mypy_cache,tests
 	mypy . --warn-return-any --warn-unused-ignores \
 	--ignore-missing-imports --disallow-untyped-defs \
-	--check-untyped-defs --exclude venv
+	--check-untyped-defs --exclude '(venv|tests)'
 
 lint-strict:
-	flake8 . --exclude=venv,__pycache__,.mypy_cache
-	mypy . --strict --exclude venv
+	flake8 . --exclude=venv,__pycache__,.mypy_cache,tests
+	mypy . --strict --exclude '(venv|tests)'
 
 uninstall: clean
 	rm -rf venv

@@ -1,22 +1,22 @@
 # Box Drawing Characters
 V_WALL = "┃"
 H_WALL = "━━━"
-RESET = "\033[0m"
+RESET = "\033[0m"  # Resets all ANSI formatting
 
 north, east, south, west = 1, 2, 4, 8
 
 THEMES = {
     "day": {
-        "start": "\033[38;5;78m",
-        "goal": "\033[38;5;203m",
-        "path": "\033[38;5;222m",
-        "pattern": "\033[48;5;230m"
+        "start": "\033[38;5;78m",    # Bright green
+        "goal": "\033[38;5;203m",    # Pink
+        "path": "\033[38;5;222m",    # Light beige
+        "pattern": "\033[48;5;230m"  # Light cream
     },
     "night": {
-        "start": "\033[38;5;117m",
-        "goal": "\033[38;5;215m",
-        "path": "\033[38;5;246m",
-        "pattern": "\033[48;5;236m"
+        "start": "\033[38;5;117m",   # Light sky blue
+        "goal": "\033[38;5;215m",    # Soft orange
+        "path": "\033[38;5;246m",    # Medium gray
+        "pattern": "\033[48;5;236m"  # Dark gray-blue
     }
 }
 
