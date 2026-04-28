@@ -6,7 +6,6 @@ This module provides a CLI interface for generating, displaying,
 and interacting with a maze generator system.
 """
 
-import sys
 import random
 import os
 from app import (read_config, generate_output, display_maze, toggle_perfect,
@@ -139,13 +138,14 @@ def main() -> None:
 
     except ConfigError as e:
         print("Configurations Error:", e)
-        sys.exit()
+        return
     except RenderError as e:
         print("\033[2J\033[H", end="")
         print("Rendering Error:", e)
-        sys.exit()
+        return
     except MazeError as e:
         print("Maze Generation Error:", e)
+        return
 
 
 if __name__ == "__main__":
