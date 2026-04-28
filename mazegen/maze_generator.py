@@ -304,8 +304,7 @@ class MazeGenerator:
         # the '42' pattern will take 5x7 grid
         # 1 extra of space around it to allow carve paths around
         if self.width < 8 or self.height < 6:
-            print("Error: Maze too small to apply '42' pattern")
-            return
+            raise MazeError("Error: Maze too small to apply '42' pattern")
 
         # list of coordinates that form shapes of '4' and '2' (y, x)
         # this will take up max 5 rows (height) and 7 columns (width)
@@ -332,9 +331,8 @@ class MazeGenerator:
             pattern_cells.add((px, py))
 
         if self.entry in pattern_cells or self.exit in pattern_cells:
-            print("Error: The '42' pattern is not applied because "
-                  "entry/exit overlap pattern region")
-            return
+            raise MazeError("Error: The '42' pattern is not applied because "
+                            "entry/exit overlap pattern region")
 
         for dy, dx in p4 + p2:
             py, px = offset_y + dy, offset_x + dx
@@ -379,23 +377,40 @@ class MazeGenerator:
                 row.append(False)
             visited.append(row)
 
-        # Apply pattern and mark as visited so DFS goes AROUND them
-        if use_pattern:
-            self.apply_42_pattern(visited)
+        try:
+            # Apply pattern and mark as visited so DFS goes AROUND them
+            if use_pattern:
+                self.apply_42_pattern(visited)
 
-        if self.algorithm == "dfs":
-            self._generate_dfs(visited, config, color, mode, renderer)
-        elif self.algorithm == "prim":
-            self._generate_prim(visited, config, color, mode, renderer)
+            if self.algorithm == "dfs":
+                self._generate_dfs(visited, config, color, mode, renderer)
+            elif self.algorithm == "prim":
+                self._generate_prim(visited, config, color, mode, renderer)
 
-        # handle PERFECT=False (multiple paths instead of just one)
-        if not self.perfect:
-            self._add_loops(config, color, mode, renderer)
+            # handle PERFECT=False (multiple paths instead of just one)
+            if not self.perfect:
+                self._add_loops(config, color, mode, renderer)
 
-        # print final frame
-        if renderer:
-            output = config.get("OUTPUT_FILE", "maze.txt")
-            renderer.display_maze(output, color, mode)
+            # print final frame
+            if renderer:
+                output = config.get("OUTPUT_FILE", "maze.txt")
+                renderer.display_maze(output, color, mode)
+
+        except MazeError as e:
+            if self.algorithm == "dfs":
+                self._generate_dfs(visited, config, color, mode, renderer)
+            elif self.algorithm == "prim":
+                self._generate_prim(visited, config, color, mode, renderer)
+
+            # handle PERFECT=False (multiple paths instead of just one)
+            if not self.perfect:
+                self._add_loops(config, color, mode, renderer)
+
+            # print final frame
+            if renderer:
+                output = config.get("OUTPUT_FILE", "maze.txt")
+                renderer.display_maze(output, color, mode)
+                print(e)
 
     def _generate_dfs(
             self, visited: list[list[bool]],
