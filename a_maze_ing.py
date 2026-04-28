@@ -6,6 +6,7 @@ This module provides a CLI interface for generating, displaying,
 and interacting with a maze generator system.
 """
 
+import sys
 import random
 import os
 from app import (read_config, generate_output, display_maze, toggle_perfect,
