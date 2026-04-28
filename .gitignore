@@ -20,6 +20,7 @@ dist/
 .coverage
 htmlcov/
 tests/
+pytest.ini
 
 # Project outputs
 maze.txt
