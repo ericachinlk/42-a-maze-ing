@@ -1,30 +1,10 @@
-from mazegen import MazeGenerator, MazeError
-
-
-def validate_path(maze: MazeGenerator, path: str) -> bool:
-    x, y = maze.entry
-
-    moves = {
-        "N": (0, -1, 1),
-        "E": (1, 0, 2),
-        "S": (0, 1, 4),
-        "W": (-1, 0, 8),
-    }
-
-    for step in path:
-        dx, dy, wall = moves[step]
-
-        # wall must be OPEN
-        if maze.grid[y][x] & wall != 0:
-            return False
-
-        x += dx
-        y += dy
-
-    return (x, y) == maze.exit
+from mazegen import MazeGenerator, MazeError, RenderError, CLIRenderer
 
 
 def main():
+
+    display = input("Display the maze? (y/n): ")
+
     try:
         maze = MazeGenerator(
             width=20,
@@ -36,18 +16,29 @@ def main():
             algorithm="dfs"
         )
 
-        maze.generate()
+        if display == "y":
+            renderer = CLIRenderer(
+                maze.get_maze_info(),
+                maze.find_shortest_path())
 
-        print(maze.grid)                 # raw structure
-        print(maze.find_shortest_path()) # solution path (N/E/S/W)
-        print(validate_path(maze, maze.find_shortest_path()))
-        print()
+            maze.generate(use_pattern=True, renderer=renderer)
+            renderer.path = maze.find_shortest_path()
+            renderer.display_maze(show_path=True)
 
-        data = maze.to_hex()
-        for line in data:
-            print(line)
+            print(maze.grid)
+            print(maze.find_shortest_path())
+            maze.write_output("output_test.txt")
+        
+        elif display == "n":
+            maze.generate()
+            print(maze.grid)
+            print(maze.find_shortest_path())
+            maze.write_output("output_test.txt")
+        
+        else:
+            print("Unknown command. Please enter only 'y' or 'n'\n")
 
-    except MazeError as e:
+    except (MazeError, RenderError) as e:
         print("Error:", e)
 
 

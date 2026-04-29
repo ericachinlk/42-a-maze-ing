@@ -1,6 +1,7 @@
 import random
 from collections import deque
-from typing import Protocol, Optional
+from typing import Optional, Any
+from mazegen.renderer import CLIRenderer
 
 """
 Maze generation engine supporting DFS and Prim algorithms.
@@ -14,51 +15,6 @@ The generator is independent of UI and can be used standalone.
 
 # Bitmask directions used for wall encoding in each cell
 N, E, S, W = 1, 2, 4, 8
-
-
-class Renderer(Protocol):
-    """
-    Protocol interface for rendering hooks used during maze generation.
-
-    This allows external modules to inject rendering logic without
-    coupling MazeGenerator to any UI or CLI system.
-    """
-    def pre_render(
-            self,
-            maze: "MazeGenerator",
-            mode: str,
-            color: str = ""
-    ) -> None:
-        """
-        Called during maze generation to render intermediate states.
-
-        Args:
-            config: Configuration dictionary.
-            maze: Current MazeGenerator instance.
-            mode: Display mode (e.g. "day", "night").
-            color: Wall color escape sequence.
-        """
-        ...
-
-    def display_maze(
-            self,
-            maze: "MazeGenerator",
-            color: str,
-            mode: str,
-            show_path: bool = False,
-            final: bool = True
-    ) -> None:
-        """
-        Displays the final maze output.
-
-        Args:
-            filename: Output file containing maze data.
-            color: Wall color scheme.
-            mode: Display mode.
-            show_path: Whether to show solution path.
-            final: Whether this is final render frame.
-        """
-        ...
 
 
 class MazeError(Exception):
@@ -343,10 +299,8 @@ class MazeGenerator:
 
     def generate(
             self,
-            color: str = "",
-            mode: str = "day",
             use_pattern: bool = False,
-            renderer: Renderer | None = None
+            renderer: CLIRenderer | None = None
     ) -> None:
         """
         Generates the maze using the selected algorithm.
@@ -380,26 +334,27 @@ class MazeGenerator:
             warning_msg = str(e)
 
         if self.algorithm == "dfs":
-            self._generate_dfs(visited, color, mode, renderer)
+            self._generate_dfs(visited, renderer=renderer)
         elif self.algorithm == "prim":
-            self._generate_prim(visited, color, mode, renderer)
+            self._generate_prim(visited, renderer=renderer)
 
         # handle PERFECT=False (multiple paths instead of just one)
         if not self.perfect:
-            self._add_loops(color, mode, renderer)
+            self._add_loops(renderer=renderer)
 
         # print final frame
         if renderer:
-            renderer.display_maze(self, color, mode)
+            renderer.display_maze()
 
         # print warning if 42 pattern not applied
         if warning_msg:
             print(f"\n[WARNING] '42' pattern skipped: {warning_msg}")
 
     def _generate_dfs(
-            self, visited: list[list[bool]],
-            color: str, mode: str,
-            renderer: Renderer | None = None) -> None:
+            self,
+            visited: list[list[bool]],
+            renderer: CLIRenderer | None = None
+    ) -> None:
         """
         Generates maze using Depth-First Search algorithm.
 
@@ -484,7 +439,7 @@ class MazeGenerator:
                     self.grid[ny][nx] ^= opposite
 
                     if renderer:
-                        renderer.pre_render(self, mode, color)
+                        renderer.pre_render()
 
                     # move to next cell and repeat
                     dfs(nx, ny)
@@ -495,9 +450,10 @@ class MazeGenerator:
         dfs(start_x, start_y)
 
     def _generate_prim(
-            self, visited: list[list[bool]],
-            color: str, mode: str,
-            renderer: Renderer | None = None) -> None:
+            self,
+            visited: list[list[bool]],
+            renderer: CLIRenderer | None = None
+    ) -> None:
         """
         Generates maze using Prim's algorithm.
 
@@ -545,17 +501,12 @@ class MazeGenerator:
                 self.grid[ny][nx] ^= opposite
 
                 if renderer:
-                    renderer.pre_render(self, mode, color)
+                    renderer.pre_render()
 
                 visited[ny][nx] = True
                 add_walls(nx, ny)
 
-    def _add_loops(
-            self,
-            color: str,
-            mode: str,
-            renderer: Renderer | None = None
-    ) -> None:
+    def _add_loops(self, renderer: CLIRenderer | None = None) -> None:
         """
         Adds random loops to create a non-perfect maze.
 
@@ -605,7 +556,7 @@ class MazeGenerator:
                     removed += 1
 
                     if renderer:
-                        renderer.pre_render(self, mode, color)
+                        renderer.pre_render()
 
     def _creates_3x3_open_area(self, x: int, y: int) -> bool:
         """
@@ -774,3 +725,52 @@ class MazeGenerator:
                     queue.append((nx, ny, path + letter))
 
         return ""
+
+    def write_output(self, filename: str) -> None:
+        """
+        Write the generated maze and metadata to a file.
+
+        The output file contains:
+            - Hexadecimal maze grid representation
+            - Entry coordinate
+            - Exit coordinate
+            - Shortest path string (if exists)
+
+        File format example:
+            <hex grid lines>
+
+            (entry_x, entry_y)
+            (exit_x, exit_y)
+            <path string>
+
+        Args:
+            filename (str): Output file path.
+            maze (MazeGenerator): Generated maze instance.
+            entry (tuple[int, int]): Entry coordinate (x, y).
+            exit (tuple[int, int]): Exit coordinate (x, y).
+
+        Returns:
+            None
+        """
+        path = self.find_shortest_path()
+        try:
+            with open(filename, "w") as f:
+                for line in self.to_hex():
+                    f.write(line + "\n")
+
+                f.write("\n")
+                f.write(f"{self.entry[0]},{self.entry[1]}\n")
+                f.write(f"{self.exit[0]},{self.exit[1]}\n")
+                f.write(f"{path}\n")
+        except OSError as e:
+            raise MazeError(f"Failed to write output file: {e}")
+
+    def get_maze_info(self) -> dict[str, Any]:
+        return {
+            "grid": self.grid,
+            "entry": self.entry,
+            "exit": self.exit,
+            "width": self.width,
+            "height": self.height,
+            "path": self.find_shortest_path()
+        }
