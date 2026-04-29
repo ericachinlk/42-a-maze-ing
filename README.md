@@ -237,8 +237,8 @@ All core algorithms and project architecture were designed and implemented by th
 
 ## Resources
 
-* https://en.wikipedia.org/wiki/Maze_generation_algorithm
-* https://en.wikipedia.org/wiki/Depth-first_search
-* https://en.wikipedia.org/wiki/Prim%27s_algorithm
-* https://packaging.python.org/en/latest/
+* Wikipedia: https://en.wikipedia.org/wiki/Maze_generation_algorithm
+* Visual rundown on maze generation algorithms: https://weblog.jamisbuck.org/2011/2/7/maze-generation-algorithm-recap
+* Helpful video series on implementing a DFS maze generator: https://www.youtube.com/watch?v=HyK_Q5rrcr4&list=WL&index=29
+* Packaging: https://packaging.python.org/en/latest/
 * Python official documentation: https://docs.python.org/3/
