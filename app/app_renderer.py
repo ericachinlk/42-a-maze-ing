@@ -40,7 +40,7 @@ class AppRenderer:
         Returns:
             None
         """
-        from .generate_maze import pre_render
+        from .maze_functions import pre_render
         pre_render(maze, mode, color)
 
     def display_maze(
@@ -70,5 +70,5 @@ class AppRenderer:
         Returns:
             None
         """
-        from .generate_maze import display_maze
+        from .maze_functions import display_maze
         display_maze(maze, color, mode, show_path, final)

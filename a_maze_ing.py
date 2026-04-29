@@ -9,7 +9,7 @@ and interacting with a maze generator system.
 import sys
 import random
 import os
-from app import (read_config, generate_output, display_maze, toggle_perfect,
+from app import (generate_maze, read_config, display_maze, toggle_perfect,
                  set_algorithm, ConfigError, RenderError)
 from mazegen import MazeError
 
@@ -54,7 +54,7 @@ def main() -> None:
 
     try:
         mode = "day"
-        maze = generate_output(config_file, current_wall_color, mode)
+        maze = generate_maze(config_file, current_wall_color, mode)
         seed_val = maze.seed
         while True:
             config = read_config(config_file)
@@ -86,7 +86,7 @@ def main() -> None:
             if choice == "1":
                 seed_val = random.randint(1, 1000)
                 show_path = False
-                maze = generate_output(
+                maze = generate_maze(
                     config_file, current_wall_color, mode,
                     seed=seed_val)
 
@@ -114,13 +114,13 @@ def main() -> None:
                 set_algorithm(config_file, config["ALGORITHM"], val)
 
                 show_path = False
-                maze = generate_output(
+                maze = generate_maze(
                     config_file, current_wall_color, mode, seed=seed_val)
 
             elif choice == "6":
                 toggle_perfect(config_file)
                 show_path = False
-                maze = generate_output(
+                maze = generate_maze(
                     config_file, current_wall_color, mode, seed=seed_val)
 
             elif choice == "7":
