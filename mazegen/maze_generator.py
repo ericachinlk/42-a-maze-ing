@@ -1,6 +1,6 @@
 import random
 from collections import deque
-from typing import Any, Protocol, Optional
+from typing import Protocol, Optional
 
 """
 Maze generation engine supporting DFS and Prim algorithms.
@@ -25,7 +25,6 @@ class Renderer(Protocol):
     """
     def pre_render(
             self,
-            config: dict[str, Any],
             maze: "MazeGenerator",
             mode: str,
             color: str = ""
@@ -43,7 +42,7 @@ class Renderer(Protocol):
 
     def display_maze(
             self,
-            filename: str,
+            maze: "MazeGenerator",
             color: str,
             mode: str,
             show_path: bool = False,
@@ -344,7 +343,6 @@ class MazeGenerator:
 
     def generate(
             self,
-            config: dict[str, Any] | None = None,
             color: str = "",
             mode: str = "day",
             use_pattern: bool = False,
@@ -365,9 +363,6 @@ class MazeGenerator:
         Returns:
             None
         """
-        if config is None:
-            config = {}
-
         visited: list[list[bool]] = []
 
         for _ in range(self.height):
@@ -385,18 +380,17 @@ class MazeGenerator:
             warning_msg = str(e)
 
         if self.algorithm == "dfs":
-            self._generate_dfs(visited, config, color, mode, renderer)
+            self._generate_dfs(visited, color, mode, renderer)
         elif self.algorithm == "prim":
-            self._generate_prim(visited, config, color, mode, renderer)
+            self._generate_prim(visited, color, mode, renderer)
 
         # handle PERFECT=False (multiple paths instead of just one)
         if not self.perfect:
-            self._add_loops(config, color, mode, renderer)
+            self._add_loops(color, mode, renderer)
 
         # print final frame
         if renderer:
-            output = config.get("OUTPUT_FILE", "maze.txt")
-            renderer.display_maze(output, color, mode)
+            renderer.display_maze(self, color, mode)
 
         # print warning if 42 pattern not applied
         if warning_msg:
@@ -404,7 +398,7 @@ class MazeGenerator:
 
     def _generate_dfs(
             self, visited: list[list[bool]],
-            config: dict[str, Any], color: str, mode: str,
+            color: str, mode: str,
             renderer: Renderer | None = None) -> None:
         """
         Generates maze using Depth-First Search algorithm.
@@ -490,7 +484,7 @@ class MazeGenerator:
                     self.grid[ny][nx] ^= opposite
 
                     if renderer:
-                        renderer.pre_render(config, self, mode, color)
+                        renderer.pre_render(self, mode, color)
 
                     # move to next cell and repeat
                     dfs(nx, ny)
@@ -502,7 +496,7 @@ class MazeGenerator:
 
     def _generate_prim(
             self, visited: list[list[bool]],
-            config: dict[str, Any], color: str, mode: str,
+            color: str, mode: str,
             renderer: Renderer | None = None) -> None:
         """
         Generates maze using Prim's algorithm.
@@ -551,14 +545,13 @@ class MazeGenerator:
                 self.grid[ny][nx] ^= opposite
 
                 if renderer:
-                    renderer.pre_render(config, self, mode, color)
+                    renderer.pre_render(self, mode, color)
 
                 visited[ny][nx] = True
                 add_walls(nx, ny)
 
     def _add_loops(
             self,
-            config: dict[str, Any],
             color: str,
             mode: str,
             renderer: Renderer | None = None
@@ -612,7 +605,7 @@ class MazeGenerator:
                     removed += 1
 
                     if renderer:
-                        renderer.pre_render(config, self, mode, color)
+                        renderer.pre_render(self, mode, color)
 
     def _creates_3x3_open_area(self, x: int, y: int) -> bool:
         """
@@ -762,6 +755,9 @@ class MazeGenerator:
                 # ny >= 0 means not above the maze
                 # ny < self.height means not below the maze
                 if not (0 <= nx < self.width and 0 <= ny < self.height):
+                    continue
+
+                if (nx, ny) in self.pattern_cells:
                     continue
 
                 # check if wall is OPEN

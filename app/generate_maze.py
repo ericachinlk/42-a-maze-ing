@@ -1,5 +1,6 @@
 from mazegen import MazeGenerator, MazeError
 from typing import Optional
+import time
 
 
 def generate_output(
@@ -7,7 +8,7 @@ def generate_output(
         color: str = "",
         mode: str = "day",
         seed: Optional[int] = None,
-) -> tuple[MazeGenerator, str]:
+) -> MazeGenerator:
     """
     Generate a maze from a configuration file and write the result to disk.
 
@@ -55,24 +56,22 @@ def generate_output(
     renderer = AppRenderer()
 
     maze.generate(
-        config=config,
         color=color,
         mode=mode,
         use_pattern=True,
         renderer=renderer)
 
-    output: str = config["OUTPUT_FILE"]
     write_output(
-        output,
+        config["OUTPUT_FILE"],
         maze,
         config["ENTRY"],
         config["EXIT"]
     )
-    return maze, output
+    return maze
 
 
 def display_maze(
-        filename: str,
+        maze: MazeGenerator,
         color: str,
         mode: str,
         show_path: bool = False,
@@ -100,7 +99,7 @@ def display_maze(
     """
     from app.render import render_maze
     print("\033[H\033[J", end="")
-    print(render_maze(filename, color, show_path, final, mode))
+    print(render_maze(maze, color, show_path, final, mode))
 
 
 def write_output(
@@ -146,3 +145,30 @@ def write_output(
             f.write(f"{path}\n")
     except OSError as e:
         raise MazeError(f"Failed to write output file: {e}")
+
+
+def pre_render(
+        maze: MazeGenerator,
+        mode: str,
+        color: str = ""
+) -> None:
+    """
+    Render an intermediate animation frame of the maze generation process.
+
+    This function is called during maze generation to:
+    - Write current maze state to output file
+    - Display it in the terminal
+    - Pause briefly to create animation effect
+
+    Args:
+        config (Dict[str, Any]):
+            Configuration dictionary containing maze settings.
+        maze (MazeGenerator): Current maze object being generated.
+        mode (str): Display mode ("day" or "night").
+        color (str): Wall color escape code for rendering.
+
+    Returns:
+        None
+    """
+    display_maze(maze, color, mode, final=False)
+    time.sleep(0.03)

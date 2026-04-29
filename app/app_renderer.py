@@ -1,5 +1,4 @@
 from mazegen import MazeGenerator
-from typing import Any
 
 
 class AppRenderer:
@@ -19,7 +18,6 @@ class AppRenderer:
     """
     def pre_render(
             self,
-            config: dict[str, Any],
             maze: MazeGenerator,
             mode: str,
             color: str = ""
@@ -42,12 +40,12 @@ class AppRenderer:
         Returns:
             None
         """
-        from .pre_render import pre_render
-        pre_render(config, maze, mode, color)
+        from .generate_maze import pre_render
+        pre_render(maze, mode, color)
 
     def display_maze(
             self,
-            filename: str,
+            maze: MazeGenerator,
             color: str,
             mode: str,
             show_path: bool = False,
@@ -73,4 +71,4 @@ class AppRenderer:
             None
         """
         from .generate_maze import display_maze
-        display_maze(filename, color, mode, show_path, final)
+        display_maze(maze, color, mode, show_path, final)

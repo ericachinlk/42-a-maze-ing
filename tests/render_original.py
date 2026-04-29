@@ -1,5 +1,3 @@
-from mazegen import MazeGenerator
-
 # Box Drawing Characters
 V_WALL = "┃"
 H_WALL = "━━━"
@@ -114,8 +112,25 @@ def build_path_cells(
     return cells
 
 
+def parse_tuple(s: str) -> tuple[int, int]:
+    """
+    Parse a coordinate string into a tuple.
+
+    Expected format: "(x,y)"
+
+    Args:
+        s (str): Coordinate string.
+
+    Returns:
+        tuple[int, int]: Parsed (x, y) coordinate.
+    """
+    s = s.strip("()")
+    x, y = s.split(",")
+    return int(x), int(y)
+
+
 def render_maze(
-        maze: MazeGenerator,
+        filepath: str,
         color: str = "",
         show_path: bool = False,
         final: bool = False,
@@ -143,58 +158,80 @@ def render_maze(
     Raises:
         RenderError: If file is missing or maze format is invalid.
     """
+    try:
+        with open(filepath, 'r') as f:
+            lines = [line.strip() for line in f.readlines() if line.strip()]
+    except FileNotFoundError:
+        raise RenderError(f"{filepath} not found.")
 
-    path_line = maze.find_shortest_path()
+    grid_lines = []
+    coord_lines = []
+    path_line = ""
 
-    if not maze.grid:
-        raise RenderError("Maze is invalid.")
+    for line in lines:
+        if line.startswith("("):
+            coord_lines.append(line)
+        elif all(c in "0123456789ABCDEF" for c in line):
+            grid_lines.append(line)
+        else:
+            path_line = line
+
+    if not grid_lines:
+        raise RenderError(f"{filepath} doesn't contain a valid maze.")
+
+
+    width, height = len(grid_lines[0]), len(grid_lines)
+    grid = [[int(c, 16) for c in row] for row in grid_lines]
+
+    try:
+        start_pos = parse_tuple(coord_lines[0])
+        end_pos = parse_tuple(coord_lines[1])
+    except (IndexError, ValueError):
+        start_pos, end_pos = (0, 0), (width - 1, height - 1)
 
     path_cells = set()
     if show_path and path_line:
-        path_cells = build_path_cells(maze.entry, path_line)
+        path_cells = build_path_cells(start_pos, path_line)
 
     theme = THEMES.get(mode, THEMES["day"])
 
     output = []
-    for y in range(maze.height + 1):
+    for y in range(height + 1):
         line = ""
-        for x in range(maze.width + 1):
-            corners = get_corner(maze.grid, x, y, maze.width, maze.height)
-            line += f"{color}{corners}{RESET}"
+        for x in range(width + 1):
+            line += f"{color}{get_corner(grid, x, y, width, height)}{RESET}"
 
-            if x < maze.width:
+            if x < width:
                 if y == 0:
-                    has_h = maze.grid[0][x] & north
-                elif y == maze.height:
-                    has_h = maze.grid[maze.height - 1][x] & south
+                    has_h = grid[0][x] & north
+                elif y == height:
+                    has_h = grid[height - 1][x] & south
                 else:
-                    has_h = ((maze.grid[y - 1][x] & south)
-                             or (maze.grid[y][x] & north))
+                    has_h = (grid[y - 1][x] & south) or (grid[y][x] & north)
 
                 line += f"{color}{H_WALL}{RESET}" if has_h else "   "
         output.append(line)
 
-        if y < maze.height:
+        if y < height:
             line = ""
-            for x in range(maze.width + 1):
+            for x in range(width + 1):
                 if x == 0:
-                    has_v = maze.grid[y][0] & west
-                elif x == maze.width:
-                    has_v = maze.grid[y][maze.width - 1] & east
+                    has_v = grid[y][0] & west
+                elif x == width:
+                    has_v = grid[y][width - 1] & east
                 else:
-                    has_v = ((maze.grid[y][x - 1] & east)
-                             or (maze.grid[y][x] & west))
+                    has_v = (grid[y][x - 1] & east) or (grid[y][x] & west)
 
                 line += f"{color}{V_WALL}{RESET}" if has_v else " "
 
-                if x < maze.width:
-                    if (x, y) == maze.entry and final:
+                if x < width:
+                    if (x, y) == start_pos and final:
                         line += f" \033[1m{theme['start']}S{RESET} "
-                    elif (x, y) == maze.exit and final:
+                    elif (x, y) == end_pos and final:
                         line += f" \033[1m{theme['goal']}G{RESET} "
                     elif (x, y) in path_cells:
                         line += f" {theme['path']}·{RESET} "
-                    elif maze.grid[y][x] == 15 and final:
+                    elif grid[y][x] == 15 and final:
                         line += f"{theme['pattern']}   {RESET}"
                     else:
                         line += "   "

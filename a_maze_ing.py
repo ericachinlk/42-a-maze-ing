@@ -54,7 +54,7 @@ def main() -> None:
 
     try:
         mode = "day"
-        maze, output = generate_output(config_file, current_wall_color, mode)
+        maze = generate_output(config_file, current_wall_color, mode)
         seed_val = maze.seed
         while True:
             config = read_config(config_file)
@@ -86,27 +86,27 @@ def main() -> None:
             if choice == "1":
                 seed_val = random.randint(1, 1000)
                 show_path = False
-                _, output = generate_output(
+                maze = generate_output(
                     config_file, current_wall_color, mode,
                     seed=seed_val)
 
             elif choice == "2":
                 show_path = not show_path
                 print("\033[2J\033[H", end="")
-                display_maze(output, current_wall_color, mode,
+                display_maze(maze, current_wall_color, mode,
                              show_path=show_path)
 
             elif choice == "3":
                 color_index = (color_index + 1) % len(wall_colors)
                 current_wall_color = wall_colors[color_index]
                 print("\033[2J\033[H", end="")
-                display_maze(output, current_wall_color, mode,
+                display_maze(maze, current_wall_color, mode,
                              show_path=show_path)
 
             elif choice == "4":
                 mode = "night" if mode == "day" else "day"
                 print("\033[2J\033[H", end="")
-                display_maze(output, current_wall_color, mode,
+                display_maze(maze, current_wall_color, mode,
                              show_path=show_path)
 
             elif choice == "5":
@@ -114,13 +114,13 @@ def main() -> None:
                 set_algorithm(config_file, config["ALGORITHM"], val)
 
                 show_path = False
-                _, output = generate_output(
+                maze = generate_output(
                     config_file, current_wall_color, mode, seed=seed_val)
 
             elif choice == "6":
                 toggle_perfect(config_file)
                 show_path = False
-                _, output = generate_output(
+                maze = generate_output(
                     config_file, current_wall_color, mode, seed=seed_val)
 
             elif choice == "7":
