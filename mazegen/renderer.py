@@ -69,7 +69,6 @@ class CLIRenderer:
             self.exit = maze_info["exit"]
             self.width = maze_info["width"]
             self.height = maze_info["height"]
-            self.path = maze_info["path"]
         except KeyError as e:
             raise RenderError("Unable to retrieve maze_info. "
                               f"Missing key: {e}")
@@ -77,6 +76,7 @@ class CLIRenderer:
         self.mode = "day"
         self.wall_color = "\033[38;5;240m"
         self.color_index = 0
+        self.path: str = ""
 
     def toggle_mode(self) -> None:
         self.mode = "night" if self.mode == "day" else "day"
@@ -85,7 +85,7 @@ class CLIRenderer:
         self.color_index = (self.color_index + 1) % len(wall_colors_rotation)
         self.wall_color = wall_colors_rotation[self.color_index]
 
-    def render_maze(self, show_path: bool = False, final: bool = False) -> str:
+    def render_maze(self, show_path: bool, final: bool) -> str:
         """
         Render a maze from a saved output file into a string representation.
 
@@ -114,15 +114,13 @@ class CLIRenderer:
         exit = self.exit
         width = self.width
         height = self.height
+        path_line = self.path
 
         if not grid:
             raise RenderError("Maze is invalid.")
 
-        path_line = self.path
-
         path_cells = set()
-        if show_path and path_line:
-            path_cells = self._build_path_cells(entry, path_line)
+        path_cells = self._build_path_cells(entry, path_line)
 
         theme = THEMES.get(self.mode, THEMES["day"])
         wall_color = self.wall_color
@@ -164,7 +162,10 @@ class CLIRenderer:
                         elif (x, y) == exit and final:
                             line += f" \033[1m{theme['goal']}G{RESET} "
                         elif (x, y) in path_cells:
-                            line += f" {theme['path']}·{RESET} "
+                            if show_path:
+                                line += f" {theme['path']}·{RESET} "
+                            else:
+                                line += f"  {RESET} "
                         elif grid[y][x] == 15 and final:
                             line += f"{theme['pattern']}   {RESET}"
                         else:
@@ -192,12 +193,12 @@ class CLIRenderer:
         Returns:
             None
         """
-        self.display_maze(final=False)
+        self.display_maze(show_path=False, final=False)
         time.sleep(0.03)
 
     def display_maze(
             self,
-            show_path: bool = False,
+            show_path: bool = True,
             final: bool = True
     ) -> None:
         """

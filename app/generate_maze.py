@@ -4,8 +4,6 @@ from typing import Optional
 
 def generate_maze(
         config_file: str,
-        wall_color: str = "\033[38;5;240m",
-        mode: str = "day",
         seed: Optional[int] = None,
         display: bool = False
 ) -> tuple[MazeGenerator, CLIRenderer | None]:
@@ -55,8 +53,8 @@ def generate_maze(
 
     maze_info = maze.get_maze_info()
     if display:
-        renderer = CLIRenderer(maze_info, mode=mode, wall_color=wall_color)
-        maze.generate(use_pattern=True, renderer=renderer)
+        renderer = CLIRenderer(maze_info)
+        maze.generate(renderer=renderer, use_pattern=True)
     else:
         renderer = None
         maze.generate()

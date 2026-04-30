@@ -173,6 +173,8 @@ class MazeGenerator:
                 row.append(15)
             self.grid.append(row)
 
+        self.pattern_error: str | None = None
+
     def _validate(
         self,
         width: int,
@@ -299,8 +301,8 @@ class MazeGenerator:
 
     def generate(
             self,
-            use_pattern: bool = False,
-            renderer: CLIRenderer | None = None
+            renderer: CLIRenderer | None = None,
+            use_pattern: bool = False
     ) -> None:
         """
         Generates the maze using the selected algorithm.
@@ -325,13 +327,11 @@ class MazeGenerator:
                 row.append(False)
             visited.append(row)
 
-        warning_msg = None
         try:
-            # Apply pattern and mark as visited so DFS goes AROUND them
             if use_pattern:
                 self.apply_42_pattern(visited)
         except MazeError as e:
-            warning_msg = str(e)
+            self.pattern_error = str(e)
 
         if self.algorithm == "dfs":
             self._generate_dfs(visited, renderer=renderer)
@@ -345,10 +345,6 @@ class MazeGenerator:
         # print final frame
         if renderer:
             renderer.display_maze()
-
-        # print warning if 42 pattern not applied
-        if warning_msg:
-            print(f"\n[WARNING] '42' pattern skipped: {warning_msg}")
 
     def _generate_dfs(
             self,
@@ -771,6 +767,5 @@ class MazeGenerator:
             "entry": self.entry,
             "exit": self.exit,
             "width": self.width,
-            "height": self.height,
-            "path": self.find_shortest_path()
+            "height": self.height
         }
