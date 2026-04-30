@@ -41,33 +41,18 @@ def main() -> None:
         return
     config_file = sys.argv[1]
 
-    wall_colors = [
-        "\033[38;5;240m",  # Dark gray
-        "\033[38;5;67m",   # Medium blue
-        "\033[38;5;108m",  # Soft green
-        "\033[38;5;137m",  # Brown
-        "\033[38;5;131m"   # Muted red
-    ]
-    color_index = 0
-    show_path = False
-    current_wall_color = wall_colors[color_index]
-
     try:
-        mode = "day"
-        maze, renderer = generate_maze(
-            config_file,
-            wall_color=current_wall_color,
-            mode=mode,
-            display=True)
+        show_path = False
+        maze, renderer = generate_maze(config_file, display=True)
         seed_val = maze.seed
-        while True:
+        while True and renderer:
             config = read_config(config_file)
             perfectness = "perfect" if config["PERFECT"] else "non-perfect"
             print("=== A-Maze-ing ===")
             print("1. Regenerate new maze")
             print("2. Show/hide shortest path from entry to exit")
             print("3. Change maze wall colours")
-            print(f"4. Toggle day/night mode: {mode}")
+            print(f"4. Toggle day/night mode: {renderer.mode}")
             print(f"5. Switch algorithm: {config['ALGORITHM']}")
             print(f"6. Toggle maze loops: {perfectness}")
             print("7. Show configurations")
@@ -91,31 +76,22 @@ def main() -> None:
                 seed_val = random.randint(1, 1000)
                 show_path = False
                 maze, renderer = generate_maze(
-                    config_file, wall_color=current_wall_color, mode=mode,
-                    seed=seed_val, display=True)
+                    config_file, seed=seed_val, display=True)
 
             elif choice == "2":
                 show_path = not show_path
                 print("\033[2J\033[H", end="")
-                if renderer and show_path:
+                if show_path:
                     renderer.path = maze.find_shortest_path()
-                if renderer:
-                    renderer.display_maze(show_path=show_path)
+                renderer.display_maze(show_path=show_path)
 
             elif choice == "3":
-                color_index = (color_index + 1) % len(wall_colors)
-                current_wall_color = wall_colors[color_index]
-
-                if renderer:
-                    renderer.set_wall_color(current_wall_color)
-                    renderer.display_maze(show_path=show_path)
+                renderer.rotate_wall_color()
+                renderer.display_maze(show_path=show_path)
 
             elif choice == "4":
-                mode = "night" if mode == "day" else "day"
-
-                if renderer:
-                    renderer.set_mode(mode)
-                    renderer.display_maze(show_path=show_path)
+                renderer.toggle_mode()
+                renderer.display_maze(show_path=show_path)
 
             elif choice == "5":
                 val = "prim" if config["ALGORITHM"] == "dfs" else "dfs"
@@ -123,15 +99,13 @@ def main() -> None:
 
                 show_path = False
                 maze, renderer = generate_maze(
-                    config_file, wall_color=current_wall_color, mode=mode,
-                    seed=seed_val, display=True)
+                    config_file, seed=seed_val, display=True)
 
             elif choice == "6":
                 toggle_perfect(config_file)
                 show_path = False
                 maze, renderer = generate_maze(
-                    config_file, wall_color=current_wall_color, mode=mode,
-                    seed=seed_val, display=True)
+                    config_file, seed=seed_val, display=True)
 
             elif choice == "7":
                 config["ACTIVE_SEED"] = seed_val
