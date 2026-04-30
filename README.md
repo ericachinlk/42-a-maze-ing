@@ -6,18 +6,36 @@
 
 ## Description
 
-This project is a configurable maze generation system written in Python.  
-It generates 2D mazes using classical algorithms and provides tools to export, render, and solve them.
+This project is a configurable maze generation system written in Python.
+It generates 2D mazes using classical algorithms and provides tools to render, export, and solve them.
 
-The system is split into two main components:
+The project is designed with a clean separation between core logic and application layer, making the maze engine reusable in other contexts.
 
-- **Core generation engine (MazeGenerator)**  
-  Handles maze creation, algorithms, and path solving.
+### Architecture Overview
+```
+root/
+├── a_maze_ing.py        # CLI entry point
+├── pyproject.toml       # Packaging configuration
+├── Makefile             # Build & run commands
+├── mazegen/             # Reusable library
+│   ├── maze_generator.py
+│   ├── renderer.py
+│   └── __init__.py
+└── app/                 # Application layer
+    ├── config.py
+    ├── generate_maze.py
+    └── __init__.py
+```
 
-- **Rendering system (AppRenderer)**  
-  Handles visual display and animation of maze generation.
+### Components
+- **Core engine (mazegen)**
+    * MazeGenerator: maze generation, solving, and export
+    * CLIRenderer: terminal rendering implementation
 
-The goal of this project is to design a reusable maze generation module that can be imported and reused in future projects, independent of any UI or rendering system.
+- **Application layer (app)**
+    * Config parsing & validation
+    * Orchestration (generate_maze)
+    * CLI interaction
 
 ---
 
