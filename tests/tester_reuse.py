@@ -22,6 +22,9 @@ def main():
             renderer.path = maze.find_shortest_path()
             renderer.display_maze(show_path=True)
 
+            renderer.toggle_mode()
+            renderer.rotate_wall_color()
+
             print(maze.grid)
             print(maze.find_shortest_path())
             maze.write_output("output_test.txt")
