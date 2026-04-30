@@ -17,10 +17,7 @@ def main():
         )
 
         if display == "y":
-            renderer = CLIRenderer(
-                maze.get_maze_info(),
-                maze.find_shortest_path())
-
+            renderer = CLIRenderer(maze.get_maze_info())
             maze.generate(use_pattern=True, renderer=renderer)
             renderer.path = maze.find_shortest_path()
             renderer.display_maze(show_path=True)
