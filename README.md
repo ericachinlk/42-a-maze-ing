@@ -15,7 +15,8 @@ The project is designed with a clean separation between core logic and applicati
 ```
 root/
 ├── a_maze_ing.py        # CLI entry point
-├── pyproject.toml
+├── pyproject.toml       # Packaging configuration
+├── Makefile             # Build & run commands
 ├── mazegen/             # Reusable library
 │   ├── maze_generator.py
 │   ├── renderer.py
