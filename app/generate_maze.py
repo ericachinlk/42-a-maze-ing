@@ -1,9 +1,9 @@
 from mazegen import MazeGenerator, CLIRenderer
-from typing import Optional
+from typing import Optional, Any
 
 
 def generate_maze(
-        config_file: str,
+        config: dict[str, Any],
         seed: Optional[int] = None,
         display: bool = False
 ) -> tuple[MazeGenerator, CLIRenderer | None]:
@@ -35,8 +35,6 @@ def generate_maze(
     Returns:
         str: The output filename where the generated maze is written.
     """
-    from app.config import read_config
-    config = read_config(config_file)
     seed_value = seed if seed is not None else config["SEED"]
 
     print("\033[2J\033[H", end="")
@@ -54,7 +52,7 @@ def generate_maze(
     maze_info = maze.get_maze_info()
     if display:
         renderer = CLIRenderer(maze_info)
-        maze.generate(renderer=renderer, use_pattern=True)
+        maze.generate(renderer=renderer)
     else:
         renderer = None
         maze.generate()

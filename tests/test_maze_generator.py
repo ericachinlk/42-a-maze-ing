@@ -107,7 +107,7 @@ def test_perfect_maze_connectivity():
         algorithm="dfs"
     )
 
-    maze.generate()
+    maze.generate(use_pattern=False) 
 
     reachable = bfs_reachable_count(maze)
 
@@ -128,7 +128,7 @@ def test_prim_maze_connectivity():
         algorithm="prim"
     )
 
-    maze.generate()
+    maze.generate(use_pattern=False) 
 
     reachable = bfs_reachable_count(maze)
 

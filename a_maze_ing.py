@@ -51,8 +51,9 @@ def main() -> None:
     config_file = sys.argv[1]
 
     try:
+        config = read_config(config_file)
         show_path = True
-        maze, renderer = generate_maze(config_file, display=True)
+        maze, renderer = generate_maze(config, display=True)
         seed_val = maze.seed
         show_config_status = False
 
@@ -61,13 +62,11 @@ def main() -> None:
             perfectness = "perfect" if config["PERFECT"] else "non-perfect"
 
             if not show_config_status:
-                renderer.path = maze.find_shortest_path()
                 renderer.display_maze(show_path=show_path)
                 if maze.pattern_error:
                     print("\n[WARNING] '42' pattern skipped: "
                           f"{maze.pattern_error}")
-
-            if show_config_status:
+            else:
                 show_config(config, seed_val)
                 print("\033[2J\033[H", end="")
                 show_config_status = False
@@ -99,31 +98,30 @@ def main() -> None:
             if choice == "1":
                 seed_val = random.randint(1, 1000)
                 maze, renderer = generate_maze(
-                    config_file, seed=seed_val, display=True)
+                    config, seed=seed_val, display=True)
 
             elif choice == "2":
                 show_path = not show_path
                 print("\033[2J\033[H", end="")
-                renderer.display_maze(show_path=show_path)
 
             elif choice == "3":
                 renderer.rotate_wall_color()
-                renderer.display_maze(show_path=show_path)
+                print("\033[2J\033[H", end="")
 
             elif choice == "4":
                 renderer.toggle_mode()
-                renderer.display_maze(show_path=show_path)
+                print("\033[2J\033[H", end="")
 
             elif choice == "5":
                 val = "prim" if config["ALGORITHM"] == "dfs" else "dfs"
                 set_algorithm(config_file, config["ALGORITHM"], val)
                 maze, renderer = generate_maze(
-                    config_file, seed=seed_val, display=True)
+                    config, seed=seed_val, display=True)
 
             elif choice == "6":
                 toggle_perfect(config_file)
                 maze, renderer = generate_maze(
-                    config_file, seed=seed_val, display=True)
+                    config, seed=seed_val, display=True)
 
             elif choice == "7":
                 show_config_status = True

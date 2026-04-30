@@ -302,7 +302,7 @@ class MazeGenerator:
     def generate(
             self,
             renderer: CLIRenderer | None = None,
-            use_pattern: bool = False
+            use_pattern: bool = True
     ) -> None:
         """
         Generates the maze using the selected algorithm.
@@ -344,6 +344,7 @@ class MazeGenerator:
 
         # print final frame
         if renderer:
+            renderer.path = self.find_shortest_path()
             renderer.display_maze()
 
     def _generate_dfs(

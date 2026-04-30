@@ -199,7 +199,8 @@ class CLIRenderer:
     def display_maze(
             self,
             show_path: bool = True,
-            final: bool = True
+            final: bool = True,
+            clear_screen: bool = True
     ) -> None:
         """
         Render the maze to the terminal or output display.
@@ -220,7 +221,8 @@ class CLIRenderer:
         Returns:
             None
         """
-        print("\033[H\033[J", end="")
+        if clear_screen:
+            print("\033[H\033[J", end="")
         print(self.render_maze(show_path=show_path, final=final))
 
     def _get_corner(
