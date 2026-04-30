@@ -7,6 +7,14 @@ V_WALL = "┃"
 H_WALL = "━━━"
 RESET = "\033[0m"  # Resets all ANSI formatting
 
+wall_colors_rotation = [
+    "\033[38;5;240m",  # Dark gray
+    "\033[38;5;67m",   # Medium blue
+    "\033[38;5;108m",  # Soft green
+    "\033[38;5;137m",  # Brown
+    "\033[38;5;131m"   # Muted red
+]
+
 north, east, south, west = 1, 2, 4, 8
 
 THEMES = {
@@ -52,12 +60,7 @@ class CLIRenderer:
         pre_render: Renders intermediate frames during maze generation.
         display_maze: Renders the final maze output.
     """
-    def __init__(
-            self,
-            maze_info: dict[str, Any],
-            mode: str = "day",
-            wall_color: str = "\033[38;5;240m"
-    ) -> None:
+    def __init__(self, maze_info: dict[str, Any]) -> None:
         try:
             self.grid = maze_info["grid"]
             self.entry = maze_info["entry"]
@@ -68,8 +71,16 @@ class CLIRenderer:
         except KeyError:
             raise RenderError("Unable to retrieve maze info")
 
-        self.mode = mode
-        self.wall_color = wall_color
+        self.mode = "day"
+        self.wall_color = "\033[38;5;240m"
+        self.color_index = 0
+
+    def toggle_mode(self) -> None:
+        self.mode = "night" if self.mode == "day" else "day"
+
+    def rotate_wall_color(self) -> None:
+        self.color_index = (self.color_index + 1) % len(wall_colors_rotation)
+        self.wall_color = wall_colors_rotation[self.color_index]
 
     def render_maze(self, show_path: bool = False, final: bool = False) -> str:
         """
@@ -207,12 +218,6 @@ class CLIRenderer:
         """
         print("\033[H\033[J", end="")
         print(self.render_maze(show_path=show_path, final=final))
-
-    def set_mode(self, mode: str) -> None:
-        self.mode = mode
-
-    def set_wall_color(self, wall_color: str) -> None:
-        self.wall_color = wall_color
 
     def _get_corner(
             self,
