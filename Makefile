@@ -26,14 +26,16 @@ clean:
 	find . -type f -name "*.pyc" -delete
 
 lint:
-	flake8 . --exclude=venv,__pycache__,.mypy_cache,tests
-	mypy . --warn-return-any --warn-unused-ignores \
+	$(PYTHON) -m flake8 . --exclude=venv,__pycache__,.mypy_cache,tests
+	$(PYTHON) -m mypy . --warn-return-any --warn-unused-ignores \
 	--ignore-missing-imports --disallow-untyped-defs \
 	--check-untyped-defs --exclude '(venv|tests)'
 
 lint-strict:
-	flake8 . --exclude=venv,__pycache__,.mypy_cache,tests
-	mypy . --strict --exclude '(venv|tests)'
+	$(PYTHON) -m flake8 . --exclude=venv,__pycache__,.mypy_cache,tests
+	$(PYTHON) -m mypy . --strict --exclude '(venv|tests)'
 
 uninstall: clean
 	rm -rf venv
+
+.PHONY: install dev-tools build run debug clean lint lint-strict uninstall
