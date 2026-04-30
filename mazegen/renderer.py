@@ -61,6 +61,8 @@ class CLIRenderer:
         display_maze: Renders the final maze output.
     """
     def __init__(self, maze_info: dict[str, Any]) -> None:
+        if not isinstance(maze_info, dict):
+            raise RenderError("maze_info must be a dict")
         try:
             self.grid = maze_info["grid"]
             self.entry = maze_info["entry"]
@@ -68,8 +70,9 @@ class CLIRenderer:
             self.width = maze_info["width"]
             self.height = maze_info["height"]
             self.path = maze_info["path"]
-        except KeyError:
-            raise RenderError("Unable to retrieve maze info")
+        except KeyError as e:
+            raise RenderError("Unable to retrieve maze_info. "
+                              f"Missing key: {e}")
 
         self.mode = "day"
         self.wall_color = "\033[38;5;240m"
