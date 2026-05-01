@@ -275,9 +275,9 @@ class MazeGenerator:
             renderer.path = self.find_shortest_path()
             renderer.pattern_error = warning_message
             renderer.display_maze()
-
-        if warning_message:
-            print(warning_message)
+        else:
+            if warning_message:
+                print(warning_message)
 
     def _generate_dfs(
             self,
