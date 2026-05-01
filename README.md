@@ -6,17 +6,19 @@
 
 ## Description
 
-This project is a configurable maze generation system written in Python.
-It generates 2D mazes using classical algorithms and provides tools to render, export, and solve them.
+This project is a **configurable maze generation system written in Python**.  
+It generates 2D mazes using classical algorithms and provides tools to **render, export, and solve** them.
 
-The project is designed with a clean separation between core logic and application layer, making the maze engine reusable in other contexts.
+The system is designed with a **clear separation between core logic and application layer**, making the maze engine reusable in other projects.
 
-### Architecture Overview
+---
+
+## Architecture Overview
 ```
 root/
 ├── a_maze_ing.py        # CLI entry point
 ├── pyproject.toml       # Packaging configuration
-├── Makefile             # Build & run commands
+├── Makefile             # Automation commands
 ├── mazegen/             # Reusable library
 │   ├── maze_generator.py
 │   ├── renderer.py
@@ -27,39 +29,62 @@ root/
     └── __init__.py
 ```
 
-### Components
-- **Core engine (mazegen)**
-    * MazeGenerator: maze generation, solving, and export
-    * CLIRenderer: terminal rendering implementation
+---
 
-- **Application layer (app)**
-    * Config parsing & validation
-    * Orchestration (generate_maze)
-    * CLI interaction
+## Core Components
+
+### mazegen (Reusable Library)
+
+- **MazeGenerator**
+  - DFS & Prim maze generation
+  - Pattern constraints ("42 pattern")
+  - Loop control (perfect / non-perfect)
+  - BFS shortest path solver
+  - Hex export
+
+- **CLIRenderer**
+  - Terminal rendering
+  - Animation support
+  - Theme switching (day/night)
+  - Wall color rotation
+
+---
+
+### app (Application Layer)
+
+- **config.py**
+  - Config parsing and validation
+
+- **generate_maze.py**
+  - Orchestration between config, generator, and renderer
+
+---
+
+### CLI
+
+- **a_maze_ing.py**
+  - Interactive interface
+  - Runtime controls (toggle path, theme, algorithm, etc.)
 
 ---
 
 ## Maze Representation
 
-The maze is stored as a 2D grid:
-```
-self.grid[y][x] → integer (bitmask)
-```
-
-Each cell uses 4-bit encoding for walls:
+Each cell encodes walls using 4 bits:
 
 - N = 1  
 - E = 2  
 - S = 4  
 - W = 8  
 
-Example:
-- 15 → all walls closed (1111)
-- 0 → all walls open (0000)
+### Examples
+
+- `15`: all walls closed (`1111`)
+- `0`: all walls open (`0000`)
 
 ---
 
-## Algorithm Used
+## Algorithms
 
 We implemented two generation algorithms:
 
@@ -84,12 +109,16 @@ DFS was chosen because:
 
 - Configurable maze size
 - Seed-based reproducibility
+- DFS & Prim algorithms
 - Perfect / non-perfect maze modes
-- Optional loop generation
-- Embedded pattern constraint system ("42 pattern")
+- Loop generation
+- Embedded **"42" pattern constraint**
 - BFS shortest path solver
 - Hex export format
-- Rendering hooks (pluggable UI system)
+- CLI rendering with:
+  - Animation
+  - Day/night themes
+  - Wall color rotation
 
 ---
 
@@ -107,46 +136,69 @@ SEED=42
 ALGORITHM=dfs
 ```
 
-### Fields:
+### Fields
 
-- WIDTH / HEIGHT → maze size
-- ENTRY / EXIT → coordinates (x,y)
-- OUTPUT_FILE → output file name
-- PERFECT → whether maze contains loops
-- SEED → randomness seed
-- ALGORITHM → dfs | prim
+| Key            | Description        |
+|----------------|--------------------|
+| WIDTH / HEIGHT | Maze dimensions    |
+| ENTRY / EXIT   | Coordinates `(x,y)`|
+| OUTPUT_FILE    | Output file (.txt) |
+| PERFECT        | True = no loops    |
+| SEED           | Random seed        |
+| ALGORITHM      | `dfs` or `prim`    |
+
+---
+
+## Makefile Usage
+
+The project uses a `Makefile` to simplify development and execution.
+
+### Quick Start
+```bash
+make install
+make run
+```
 
 ---
 
 ## Instructions
 
 ### 1. Setup environment
-
 ```bash
 make install
 ```
+- Creates virtual environment (`venv/`)
+- Installs `flake8` and `mypy`
+
+---
 
 ### 2. Run program
-
 ```bash
 make run
 ```
+- Runs program with `config.txt`
+
+---
 
 ### 3. Debug mode
-
 ```bash
 make debug
 ```
+- Runs with debug mode (`DEBUG=1`)
+- Displays internal maze data
+
+---
 
 ### 4. Build package (for reuse)
-
 ```bash
 make dev-tools
+```
+- Installs `build` package
+
+```bash
 make build
 ```
-
-### 5. Generated files
-
+Creates:
 ```
 dist/
   mazegen-1.0.0-py3-none-any.whl
@@ -155,19 +207,78 @@ dist/
 
 ---
 
+### 5. Code Quality
+```bash
+make lint
+```
+- Runs flake8 + mypy (moderate strictness)
+
+```bash
+make lint-strict
+```
+- Runs stricter type checking
+
+---
+
+### 6. Cleanup
+```bash
+make clean
+```
+- Removes cache files
+
+```bash
+make uninstall
+```
+- Deletes virtual environment
+
+---
+
+## CLI Features
+
+Interactive menu allows:
+
+- Regenerate maze (new seed)
+- Toggle shortest path
+- Change wall colors
+- Toggle day/night mode
+- Switch algorithm (DFS and Prim)
+- Toggle perfect/non-perfect maze
+- View configuration
+
+---
+
+## Output Format
+
+Generated `.txt` file:
+```
+<hex grid>
+
+entry_x,entry_y
+exit_x,exit_y
+<path>
+```
+
+---
+
 ## Reusability
 
-The core reusable module is:
-```
-mazegen/maze_generator.py
-```
+You can use the core generator independently:
 
-It can be imported independently:
-```
+```python
 from mazegen import MazeGenerator
 
-maze = MazeGenerator(width=20, height=10, ...)
+maze = MazeGenerator(
+    width=20,
+    height=10,
+    entry=(0, 0),
+    exit=(19, 9),
+    seed=42,
+    perfect=True,
+    algorithm="dfs"
+)
+
 maze.generate()
+
 print(maze.grid)
 print(maze.find_shortest_path())
 ```
@@ -178,8 +289,8 @@ print(maze.find_shortest_path())
 * BFS path solver
 * Grid representation (bitmask system)
 * Hex export (to_hex())
-
-Rendering system is fully separated and optional.
+* Output report generation
+* Renderer (optional and pluggable)
 
 ---
 
@@ -217,15 +328,17 @@ Rendering system is fully separated and optional.
 
 ### What worked well
 
-* Clear separation between logic and UI
 * Seed-based reproducibility
-* Modular architecture (easy to test generator alone)
+* Modular structure
+* Clean separation of concerns
+* Reusable core logic
 
 ### What could be improved
 
-* Better abstraction for rendering callbacks
-* More unit tests for edge cases
-* Cleaner separation of configuration parsing
+* Support more algorithm
+* Allow randomized maze sizes
+* Add more edge-case tests
+* Further refine configuration handling
 
 ---
 
@@ -260,3 +373,4 @@ All core algorithms and project architecture were designed and implemented by th
 * Helpful video series on implementing a DFS maze generator: https://www.youtube.com/watch?v=HyK_Q5rrcr4&list=WL&index=29
 * Packaging: https://packaging.python.org/en/latest/
 * Python official documentation: https://docs.python.org/3/
+* Google-style docstring: https://google.github.io/styleguide/pyguide.html
