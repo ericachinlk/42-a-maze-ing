@@ -1,8 +1,3 @@
-import random
-from collections import deque
-from typing import Optional, Any
-from mazegen.renderer import CLIRenderer
-
 """
 Maze generation engine supporting DFS and Prim algorithms.
 
@@ -13,6 +8,11 @@ This module provides:
 The generator is independent of any UI or rendering layer and can be
 used as a standalone library.
 """
+
+import random
+from collections import deque
+from typing import Optional, Any
+from mazegen.renderer import CLIRenderer
 
 # Bitmask directions used for wall encoding in each cell
 N, E, S, W = 1, 2, 4, 8

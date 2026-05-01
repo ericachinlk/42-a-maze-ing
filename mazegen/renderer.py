@@ -1,6 +1,3 @@
-import time
-from typing import Any
-
 """
 CLI renderer for maze visualization.
 
@@ -17,6 +14,9 @@ Features include:
 This module is strictly responsible for presentation logic and does
 not handle maze generation or solving.
 """
+
+import time
+from typing import Any
 
 # Box Drawing Characters
 V_WALL = "┃"
