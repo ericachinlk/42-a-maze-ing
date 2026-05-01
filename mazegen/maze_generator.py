@@ -347,7 +347,8 @@ class MazeGenerator:
             renderer.pattern_error = warning_message
             renderer.display_maze()
 
-        print(warning_message)
+        if warning_message:
+            print(warning_message)
 
     def _generate_dfs(
             self,
