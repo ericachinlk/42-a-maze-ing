@@ -1,11 +1,11 @@
-from typing import Any
-
 """
 Configuration parsing and validation utilities.
 
 Provides functions to read a config file, validate its structure,
 and convert raw string values into typed Python values.
 """
+
+from typing import Any
 
 
 class ConfigError(Exception):
