@@ -173,8 +173,6 @@ class MazeGenerator:
                 row.append(15)
             self.grid.append(row)
 
-        self.pattern_error: str | None = None
-
     def _validate(
         self,
         width: int,
@@ -327,11 +325,12 @@ class MazeGenerator:
                 row.append(False)
             visited.append(row)
 
+        warning_message: str | None = None
         try:
             if use_pattern:
                 self.apply_42_pattern(visited)
         except MazeError as e:
-            self.pattern_error = str(e)
+            warning_message = f"\n[WARNING] '42' pattern skipped: {str(e)}"
 
         if self.algorithm == "dfs":
             self._generate_dfs(visited, renderer=renderer)
@@ -345,7 +344,10 @@ class MazeGenerator:
         # print final frame
         if renderer:
             renderer.path = self.find_shortest_path()
+            renderer.pattern_error = warning_message
             renderer.display_maze()
+
+        print(warning_message)
 
     def _generate_dfs(
             self,

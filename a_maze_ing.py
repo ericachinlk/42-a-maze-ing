@@ -63,9 +63,6 @@ def main() -> None:
 
             if not show_config_status:
                 renderer.display_maze(show_path=show_path)
-                if maze.pattern_error:
-                    print("\n[WARNING] '42' pattern skipped: "
-                          f"{maze.pattern_error}")
             else:
                 show_config(config, seed_val)
                 print("\033[2J\033[H", end="")
