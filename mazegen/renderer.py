@@ -44,41 +44,35 @@ class RenderError(Exception):
 
 
 class CLIRenderer:
-    """Renderer class to display the maze in a CLI.
+    """
+    Renderer class to display the maze in a CLI.
 
     This class acts as a bridge between the reusable `MazeGenerator`
     module and the application-specific rendering logic.
 
     Attributes:
-        grid (list[list[int]]):
-            The maze grid bitmask.
-        entry (tuple[int, int]):
-            Coordinates of the start of the maze.
-        exit (tuple[int, int]):
-            Coordinates of the end of the maze.
-        width (int):
-            Width of the maze.
-        height (int):
-            Height of the maze.
-        mode (str):
-            Display theme mode, either 'day' or 'night'.
+        grid (list[list[int]]): The maze grid bitmask.
+        entry (tuple[int, int]): Coordinates of the start of the maze.
+        exit (tuple[int, int]): Coordinates of the end of the maze.
+        width (int): Width of the maze.
+        height (int): Height of the maze.
+        mode (str): Display theme mode, either 'day' or 'night'.
         wall_color (str): Current ANSI color code for rendering walls.
-        color_index (int):
-            Index of the current wall color in the rotation sequence.
-        path (str):
-            String representation of the path from entry to exit.
+        color_index (int): Index of the current wall color
+            in the rotation sequence.
+        path (str): String representation of the path from entry to exit.
     """
     def __init__(self, maze_info: dict[str, Any]) -> None:
-        """Initializes the CLIRenderer.
+        """
+        Initializes the CLIRenderer.
 
         Args:
-            maze_info (dict[str, Any]):
-                Dictionary containing maze configuration including
-                'grid', 'entry', 'exit', 'width', and 'height'.
+            maze_info (dict[str, Any]): Dictionary containing maze
+                configuration including 'grid', 'entry', 'exit',
+                'width', and 'height'.
 
         Raises:
-            RenderError:
-                If `maze_info` is not a dict or
+            RenderError: If `maze_info` is not a dict or
                 if any required key is missing.
         """
         if not isinstance(maze_info, dict):
@@ -102,6 +96,9 @@ class CLIRenderer:
     def toggle_mode(self) -> None:
         """
         Toggles the display theme mode between 'day' and 'night'.
+
+        Returns:
+            None
         """
         self.mode = "night" if self.mode == "day" else "day"
 
@@ -109,28 +106,30 @@ class CLIRenderer:
         """
         Rotates the wall color to the next one
         in the predefined rotation list.
+
+        Returns:
+            None
         """
         self.color_index = (self.color_index + 1) % len(wall_colors_rotation)
         self.wall_color = wall_colors_rotation[self.color_index]
 
     def render_maze(self, show_path: bool, final: bool) -> str:
         """
-        Renders a maze from a saved output file into a string representation.
+        Renders the maze grid into a string representation.
 
         This function converts the bitmask grid into an ASCII/Unicode maze
         and optionally overlays the shortest path.
 
         Args:
-            show_path (bool):
-                Whether to display the shortest path.
-            final (bool):
-                Whether this is the final render (shows start/goal/42 pattern).
+            show_path (bool): Whether to display the shortest path.
+            final (bool): Whether this is the final render
+                (shows start/goal/42 pattern).
 
         Returns:
             str: Fully rendered maze as a string.
 
         Raises:
-            RenderError: If the maze grid is missing or invalid.
+            RenderError: If the maze grid is empty or invalid.
         """
         grid = self.grid
         entry = self.entry
@@ -203,6 +202,9 @@ class CLIRenderer:
 
         This method is typically called repeatedly by the maze generator
         to visualize the step-by-step maze generation process.
+
+        Returns:
+            None
         """
         self.display_maze(show_path=False, final=False)
         time.sleep(0.03)
@@ -217,16 +219,16 @@ class CLIRenderer:
         Prints the rendered maze to the terminal.
 
         Args:
-            show_path (bool, optional):
-                Whether to overlay the shortest path on the maze.
-                Defaults to True.
-            final (bool, optional):
-                Indicates whether this is the final render
-                (affects whether some ui elements are displayed).
-                Defaults to True.
-            clear_screen (bool, optional):
-                Whether to clear the terminal screen before rendering.
-                Defaults to True.
+            show_path (bool, optional): Whether to overlay the
+                shortest path on the maze. Defaults to True.
+            final (bool, optional): Indicates whether this is the
+                final render (affects whether some ui elements
+                are displayed). Defaults to True.
+            clear_screen (bool, optional): Whether to clear the
+                terminal screen before rendering. Defaults to True.
+
+        Returns:
+            None
         """
         if clear_screen:
             print("\033[H\033[J", end="")
@@ -243,20 +245,14 @@ class CLIRenderer:
             height: int
     ) -> str:
         """
-        Computes the correct Unicode box-drawing character
-        for a grid corner.
+        Computes the Unicode box-drawing character for a corner junction.
 
         Args:
-            grid (list[list[int]]):
-                Maze grid encoded with bitmask walls.
-            x (int):
-                X-coordinate of the corner.
-            y (int):
-                Y-coordinate of the corner.
-            width (int):
-                Maze width.
-            height (int):
-                Maze height.
+            grid (list[list[int]]): Maze grid encoded with bitmask walls.
+            x (int): X-coordinate of the corner.
+            y (int): Y-coordinate of the corner.
+            width (int): Maze width.
+            height (int): Maze height.
 
         Returns:
             str: Unicode character representing the wall junction.
@@ -303,17 +299,14 @@ class CLIRenderer:
             path_str: str
     ) -> set[tuple[int, int]]:
         """
-        Converts a path string into a set of visited coordinates.
+        Converts a path string into a set of coordinates along the path.
 
         Args:
-            start (tuple[int, int]):
-                Starting coordinate.
-            path_str (str):
-                Path encoded as directions (N, E, S, W).
+            start (tuple[int, int]): Starting coordinate.
+            path_str (str): Path encoded as directions (N, E, S, W).
 
         Returns:
-            set[tuple[int, int]]:
-                Set of coordinates visited along the path.
+            set[tuple[int, int]]: Set of coordinates visited along the path.
         """
         x, y = start
         cells = {(x, y)}
