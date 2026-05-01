@@ -17,10 +17,10 @@ def demo_1(maze: MazeGenerator) -> None:
     print(f"\nExport grid data to '{filename}'")
     maze.write_output(filename)
 
-
 def demo_2(maze: MazeGenerator) -> None:
     renderer = CLIRenderer(maze.get_maze_info())
     maze.generate(renderer=renderer)
+    renderer.display_maze()
     print("\n======= DEMO 2 (WITH DISPLAY) =======")
     print("Default maze display: path shown, day mode, grey wall color")
 
@@ -39,12 +39,15 @@ def demo_2(maze: MazeGenerator) -> None:
 def demo_3(maze: MazeGenerator) -> None:
     renderer = CLIRenderer(maze.get_maze_info())
     maze.generate(renderer=renderer, use_pattern=False)
+    renderer.display_maze()
     print("\n======= DEMO 3 (DISPLAY WITHOUT PATTERN) =======")
     print("Default maze display: path shown, day mode, grey wall color")
 
 
 def main() -> None:
     try:
+        print("\033[2J\033[H", end="")
+
         maze = MazeGenerator(
             width=20,
             height=10,
