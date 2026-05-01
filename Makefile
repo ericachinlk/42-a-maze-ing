@@ -18,7 +18,7 @@ run:
 	$(PYTHON) $(MAIN) config.txt
 
 debug:
-	DEBUG=1 $(PYTHON) $(MAIN) config.txt
+	DEBUG=1 $(PYTHON) -m pdb $(MAIN) config.txt
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
