@@ -8,32 +8,24 @@ def generate_maze(
         display: bool = False
 ) -> tuple[MazeGenerator, CLIRenderer | None]:
     """
-    Generate a maze from a configuration file and write the result to disk.
+    Generate a maze from configuration and optionally render it.
 
-    This function serves as the main orchestration layer of the application.
-    It reads the configuration, initializes the maze generator, runs the
-    generation process, and writes the final output to a file.
-
-    Workflow:
-        1. Load configuration from file
-        2. Determine random seed (override if provided)
-        3. Initialize MazeGenerator instance
-        4. Generate maze using selected algorithm
-        5. Render via AppRenderer (optional animation)
-        6. Write final maze output to file
+    Initializes a MazeGenerator using the provided configuration, runs the
+    maze generation process, optionally performs live CLI rendering, and
+    writes the final maze output to disk.
 
     Args:
-        config_file (str): Path to the configuration file containing maze
-            parameters such as width, height, entry, exit, algorithm, etc.
-        color (str, optional): ANSI escape code used for wall coloring.
-            Defaults to "".
-        mode (str, optional): Display mode for rendering ("day" or "night").
-            Defaults to "day".
-        seed (Optional[int], optional): Overrides the configuration seed
-            for deterministic generation. If None, uses config seed.
+        config (dict[str, Any]): Parsed configuration dictionary containing
+            maze parameters such as width, height, entry, exit, algorithm,
+            seed, and output file path.
+        seed (Optional[int]): Overrides the configuration seed for
+            deterministic generation. If None, the seed from config is used.
+        display (bool): If True, enables CLI rendering during generation.
 
     Returns:
-        str: The output filename where the generated maze is written.
+        tuple[MazeGenerator, CLIRenderer | None]:
+            The generated MazeGenerator instance and the renderer (if display
+            is enabled), otherwise None.
     """
     seed_value = seed if seed is not None else config["SEED"]
 
