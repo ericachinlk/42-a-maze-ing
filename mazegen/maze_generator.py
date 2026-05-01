@@ -7,10 +7,11 @@ from mazegen.renderer import CLIRenderer
 Maze generation engine supporting DFS and Prim algorithms.
 
 This module provides:
-- MazeGenerator: core generation logic
-- Renderer protocol: optional rendering hooks
+    MazeGenerator: Core maze generation and solving logic.
+    MazeError: Custom exception for maze-related failures.
 
-The generator is independent of UI and can be used standalone.
+The generator is independent of any UI or rendering layer and can be
+used as a standalone library.
 """
 
 # Bitmask directions used for wall encoding in each cell
@@ -19,57 +20,43 @@ N, E, S, W = 1, 2, 4, 8
 
 class MazeError(Exception):
     """
-    Base exception for all maze-related errors in the MazeGenerator module.
+    Base exception for maze-related errors.
 
-    This exception is used to signal invalid inputs, configuration issues,
-    or illegal states encountered during maze generation.
-
-    It provides a unified error type so that users of the library can
-    consistently catch and handle all maze-specific errors.
-
-    Example:
-        try:
-            MazeGenerator(width=-1, height=10, ...)
-        except MazeError as e:
-            print(f"Maze error: {e}")
+    Raised when invalid inputs, configuration issues,
+    or illegal states occur during maze generation or processing.
     """
     pass
 
 
 class MazeGenerator:
     """
-    MazeGenerator is a reusable maze generation engine.
+    Reusable maze generation engine supporting multiple
+    algorithms and features.
 
-    It supports:
-    - Depth-First Search (DFS)
-    - Prim's algorithm
-    - Optional loop removal (perfect / non-perfect mazes)
-    - Optional embedded pattern constraints (e.g. "42" pattern)
-    - Shortest path extraction (BFS solver)
+    This class generates and solves mazes using different algorithms and
+    provides access to both the raw maze structure and the computed
+    solution path.
 
-    -------------------------------------------------------------------
-    MAZE REPRESENTATION
-    -------------------------------------------------------------------
-    The maze is stored internally as:
+    Supported features:
+        DFS (Depth-First Search) maze generation
+        Prim's algorithm maze generation
+        Perfect and non-perfect maze generation
+        Optional fixed pattern embedding ("42" pattern constraint)
+        Shortest path extraction using BFS
 
-        self.grid[y][x] -> int (bitmask of walls)
+    Maze representation:
+        The maze is stored as a 2D grid of integers:
 
-    Each cell uses 4-bit encoding:
+            self.grid[y][x]
 
-        N = 1
-        E = 2
-        S = 4
-        W = 8
+        Each cell uses a 4-bit wall encoding:
+            N = 1, E = 2, S = 4, W = 8
 
-    Example:
-        15 (1111) = all walls closed
-        0  (0000) = all walls open
+        Example values:
+            15 -> all walls present (1111)
+             0 -> no walls present (0000)
 
-    -------------------------------------------------------------------
-    BASIC USAGE
-    -------------------------------------------------------------------
-
-    Example:
+    Basic usage example:
 
         from mazegen import MazeGenerator
 
@@ -85,20 +72,8 @@ class MazeGenerator:
 
         maze.generate()
 
-        print(maze.grid)                 # raw structure
-        print(maze.find_shortest_path()) # solution path (N/E/S/W)
-
-    -------------------------------------------------------------------
-    NOTES FOR REUSE (IMPORTANT)
-    -------------------------------------------------------------------
-    This class does NOT depend on rendering or CLI.
-
-    You can safely:
-    - ignore display_maze()
-    - ignore pre_render()
-    - use grid directly
-    - export maze via to_hex()
-    - compute solution via find_shortest_path()
+        print(maze.grid)
+        print(maze.find_shortest_path())
     """
     def __init__(
             self,
@@ -111,43 +86,20 @@ class MazeGenerator:
             algorithm: str = "dfs"
     ) -> None:
         """
-        Initialise a maze generator instance.
-
-        Sets up the maze dimensions, generation
-        parameters, and internal grid structure.
-        All parameters are validated before maze creation.
+        Initializes a MazeGenerator instance.
 
         Args:
-            width (int): Maze width in cells.
-            height (int): Maze height in cells.
-            entry (tuple[int, int]): Starting coordinate (x, y).
-            exit (tuple[int, int]): Ending coordinate (x, y).
+            width (int): Width of the maze in cells.
+            height (int): Height of the maze in cells.
+            entry (tuple[int, int]): Entry coordinate (x, y).
+            exit (tuple[int, int]): Exit coordinate (x, y).
             seed (Optional[int]): Random seed for reproducibility.
+                If None, a random seed is generated.
             perfect (bool): If True, generates a perfect maze (no loops).
-            algorithm (str): "dfs" or "prim".
+            algorithm (str): Generation algorithm ("dfs" or "prim").
 
         Raises:
-            MazeError: If any input parameters are invalid.
-
-        Notes:
-            self.width, self.height store size of maze
-            self.grid creates the maze
-            The grid is a 2D list, each number = 1 cell
-            [
-            [15, 15, 15],
-            [15, 15, 15],
-            [15, 15, 15]
-            ]
-
-            Why 15? Because binary 1111 = decimal 15
-            Means all 4 walls are closed, so every cell starts fully closed
-            grid[y][x] = W | S | E | N
-            all walls closed - 1111 ~ 15
-            all walls open - 0000 ~ 0
-            if only N is closed - 0001 ~ 1
-            if only E is closed - 0010 ~ 2
-            if only S is closed - 0100 ~ 4
-            if only W is closed - 1000 ~ 8
+            MazeError: If any parameter is invalid.
         """
         self._validate(width, height, entry, exit, algorithm, seed)
 
@@ -183,26 +135,18 @@ class MazeGenerator:
         seed: int | None
     ) -> None:
         """
-        Validates initialization parameters for MazeGenerator.
-
-        Ensures that the maze configuration is valid before generation begins.
-        This prevents runtime errors caused by invalid dimensions, coordinates,
-        or unsupported algorithms.
+        Validates initialization parameters.
 
         Args:
-            width: Width of the maze in cells. Must be a positive integer.
-            height: Height of the maze in cells. Must be a positive integer.
-            entry: Starting coordinate (x, y).
-            exit: Ending coordinate (x, y).
-            algorithm: Maze generation algorithm. Must be dfs" or "prim".
-            seed: Must be an integer or None.
+            width (int): Maze width.
+            height (int): Maze height.
+            entry (tuple[int, int]): Entry coordinate.
+            exit (tuple[int, int]): Exit coordinate.
+            algorithm (str): Algorithm name.
+            seed (int | None): Random seed.
 
         Raises:
-            MazeError: If any parameter is invalid, out of bounds,
-            or unsupported.
-
-        Returns:
-            None
+            MazeError: If any parameter is invalid.
         """
         if not isinstance(width, int) or width <= 0:
             raise MazeError("Width must be positive integer")
@@ -244,20 +188,21 @@ class MazeGenerator:
 
     def apply_42_pattern(self, visited: list[list[bool]]) -> None:
         """
-        Inserts a fixed "42" obstacle pattern into the maze.
+        Applies a fixed "42" obstacle pattern to the maze.
 
-        The pattern marks specific cells as blocked and visited to
-        force maze generation to route around it.
+        The pattern blocks specific cells and are marked as visited
+        as well as stored in maze's attribute pattern_cells,
+        ensuring the generator route paths around the pattern blocks.
 
         Args:
-            visited: Grid tracking visited cells during generation.
+            visited (list[list[bool]]): Visited grid used
+                during generation.
 
-        Returns:
-            None
+        Raises:
+            MazeError: If the maze is too small or
+                entry/exit overlaps the pattern.
         """
-        # check if maze is big enough
-        # the '42' pattern will take 5x7 grid
-        # 1 extra of space around it to allow carve paths around
+        # check if maze is big enough to display '42' pattern
         if self.width < 8 or self.height < 6:
             raise MazeError("Maze too small to apply pattern")
 
@@ -269,19 +214,12 @@ class MazeGenerator:
               (2, 4), (3, 4), (4, 4), (4, 5), (4, 6)]
 
         # center the pattern in the maze
-        # example if maze size is height 9, width 11
-        # offset_y = (9 - 5) // 2 = 2
-        # (42 will take up 5 rows, leaving 4 rows blank,
-        # divide by 2 to be center pos)
-        # offset_x = (11 - 7) // 2 = 2
-        # so the shape 42 will start at offset_y, offset_x (row 2, col 2)
         # // divide gives integer, / divide gives float
         offset_y = (self.height - 5) // 2
         offset_x = (self.width - 7) // 2
 
         pattern_cells = set()
         for dy, dx in p4 + p2:
-            # go into the actual coord of shape 42
             py, px = offset_y + dy, offset_x + dx
             pattern_cells.add((px, py))
 
@@ -290,11 +228,8 @@ class MazeGenerator:
 
         for dy, dx in p4 + p2:
             py, px = offset_y + dy, offset_x + dx
-            # make all the cells in 42 to have all walls blocked
             self.grid[py][px] = 15
-            # mark these cells as visited for DFS to go around later
             visited[py][px] = True
-            # explicitly track these cells with pattern_cells
             self.pattern_cells.add((px, py))
 
     def generate(
@@ -305,17 +240,11 @@ class MazeGenerator:
         """
         Generates the maze using the selected algorithm.
 
-        Supports DFS or Prim's algorithm and optionally applies
-        pattern constraints and loop removal.
+        Optionally applies the "42" pattern and loop creation.
 
         Args:
-            config: Configuration dictionary or None
-            color: Rendering color code.
-            mode: Display mode (e.g. "day" or "night").
-            use_pattern: If True, applies embedded pattern constraints.
-
-        Returns:
-            None
+            renderer (CLIRenderer | None): Optional renderer for visualization.
+            use_pattern (bool): Whether to apply the "42" pattern.
         """
         visited: list[list[bool]] = []
 
@@ -356,67 +285,21 @@ class MazeGenerator:
             renderer: CLIRenderer | None = None
     ) -> None:
         """
-        Generates maze using Depth-First Search algorithm.
-
-        This method delegates to a recursive DFS function that carves
-        paths by backtracking through unvisited cells.
+        Generates the maze using Depth-First Search (DFS).
 
         Args:
-            visited: Grid tracking visited cells.
-            config: Configuration dictionary.
-            color: Rendering color code.
-            mode: Display mode.
-            renderer: Optional renderer for visualization.
+            visited (list[list[bool]]): Visited grid.
+            renderer (CLIRenderer | None): Optional renderer.
         """
         def dfs(x: int, y: int) -> None:
             """
-            Generates maze using randomized Depth-First Search.
+            Recursive DFS backtracking function.
 
-            This is a recursive backtracking algorithm that carves
-            passages by visiting unvisited neighbors.
+            Visits cells, removes walls, and explores neighbors randomly.
 
             Args:
-                visited: Grid tracking visited cells.
-                config: Configuration dictionary.
-                color: Rendering color.
-                mode: Display mode.
-
-            Returns:
-                None
-
-            Notes:
-                A recursive function that:
-                - mark current cell as visited
-                - shuffle directions
-                -- each tuple means dx, dy, wall to remove, opposite wall
-                -- example: (1, 0, E, W) means move to the right,
-                remove E wall of current cell,
-                & remove W wall of cell to the right
-                - try moving nx, ny = x + dx, y + dy
-                - check if inside grid and not visited
-                - if yes then break walls
-
-                A XOR B = elements in A or B but not both
-                XOR works internally on each bit position:
-                - if bits are different, write 1
-                - if bits are same, write 0
-                Example:
-                cell = cell ^ E   # remove wall
-                cell = cell ^ E   # add it back
-
-                Recursive remark:
-                every function call is stored on a call stack,
-                and when a function finishes, the program resumes
-                from the previous stack frame.
-
-                A simple visualization:
-                - dfs[0,0] -> dfs[0,1] -> dfs[1,1]
-                -> function finishes becoz no place to go from 1,1
-                - backtracks to dfs[0,1] -> e.g. if function finishes too here
-                - backtracks to dfs[0,0] -> dfs[1,0] -> explore possible moves
-                - From (1,0): explore, go deeper if possible, otherwise return.
-                Eventually everything is visited.
-                So when dfs fully done, all visited[y][x] = True
+                x (int): Current x-coordinate.
+                y (int): Current y-coordinate.
             """
             visited[y][x] = True
 
@@ -429,7 +312,7 @@ class MazeGenerator:
 
                 if (nx, ny) in self.pattern_cells:
                     continue
-                # recursion stops when there is no unvisited cell
+
                 if (
                     0 <= nx < self.width
                     and 0 <= ny < self.height
@@ -441,10 +324,8 @@ class MazeGenerator:
                     if renderer:
                         renderer.pre_render()
 
-                    # move to next cell and repeat
                     dfs(nx, ny)
 
-        # start running dfs
         start_x = self.rng.randint(0, self.width - 1)
         start_y = self.rng.randint(0, self.height - 1)
         dfs(start_x, start_y)
@@ -455,18 +336,11 @@ class MazeGenerator:
             renderer: CLIRenderer | None = None
     ) -> None:
         """
-        Generates maze using Prim's algorithm.
-
-        Expands a growing region by randomly selecting frontier walls.
+        Generates the maze using Prim's algorithm.
 
         Args:
-            visited: Grid tracking visited cells.
-            config: Configuration dictionary.
-            color: Rendering color.
-            mode: Display mode.
-
-        Returns:
-            None
+            visited (list[list[bool]]): Visited grid.
+            renderer (CLIRenderer | None): Optional renderer.
         """
         start_x = self.rng.randint(0, self.width - 1)
         start_y = self.rng.randint(0, self.height - 1)
@@ -478,13 +352,20 @@ class MazeGenerator:
             Adds frontier walls of the current cell to the candidate list.
 
             This supports Prim's algorithm by expanding the maze frontier.
+
+            Args:
+                x (int): Current x-coordinate.
+                y (int): Current y-coordinate.
             """
             directions = [
                 (0, -1, N, S), (1, 0, E, W), (0, 1, S, N), (-1, 0, W, E)]
+
             for dx, dy, wall, opposite in directions:
                 nx, ny = x + dx, y + dy
+
                 if (nx, ny) in self.pattern_cells:
                     continue
+
                 if (
                     0 <= nx < self.width
                     and 0 <= ny < self.height
@@ -493,9 +374,11 @@ class MazeGenerator:
                     walls.append((x, y, nx, ny, wall, opposite))
 
         add_walls(start_x, start_y)
+
         while walls:
             idx = self.rng.randint(0, len(walls) - 1)
             x, y, nx, ny, wall, opposite = walls.pop(idx)
+
             if not visited[ny][nx]:
                 self.grid[y][x] ^= wall
                 self.grid[ny][nx] ^= opposite
@@ -510,18 +393,10 @@ class MazeGenerator:
         """
         Adds random loops to create a non-perfect maze.
 
-        Removes walls while preventing invalid open regions.
-
         Args:
-            config: Configuration dictionary.
-            color: Rendering color.
-            mode: Display mode.
-            renderer: Optional renderer for visualization updates.
-
-        Returns:
-            None
+            renderer (CLIRenderer | None): Optional renderer.
         """
-        # remove walls of 50% of the maze cells
+        # remove walls of up to 50% of the maze cells
         extra_removals = (self.width * self.height) // 2
         attempts = 0
         removed = 0
@@ -533,7 +408,6 @@ class MazeGenerator:
             x = self.rng.randint(1, self.width - 2)
             y = self.rng.randint(1, self.height - 2)
 
-            # skip cells if they are the '42' pattern cells
             if (x, y) in self.pattern_cells:
                 continue
 
@@ -560,17 +434,15 @@ class MazeGenerator:
 
     def _creates_3x3_open_area(self, x: int, y: int) -> bool:
         """
-        Checks whether removing a wall creates a fully open 3x3 area.
+        Checks whether removing a wall would create a fully open 3x3 area.
 
         Args:
-            x: X coordinate.
-            y: Y coordinate.
+            x (int): X-coordinate.
+            y (int): Y-coordinate.
 
         Returns:
-            True if a 3x3 open region would be formed, otherwise False.
-
-        Notes:
-            Only checks interior-safe 3x3 blocks; edges are skipped.
+            bool: True if a 3x3 open area would be created,
+                False otherwise.
         """
         # check top-left corner of possible 3x3 blocks around (x, y)
         # -2 means look 2 cells up, -1 means look 1 cell up,
@@ -603,23 +475,18 @@ class MazeGenerator:
 
     def to_hex(self) -> list[str]:
         """
-        Converts the maze grid into hexadecimal string format.
+        Converts the maze grid into hexadecimal string representation.
 
         Returns:
-            List of strings representing each row in hex.
-
-        Notes:
-            This function:
-            - Takes each row of the maze, e.g. [15, 10, 3]
-            - Converts numbers into hex digits e.g. ["F", "A", 3]
-            - Joins them into a string -> "FA3"
-            - Returns list of strings -> ["FA3", ...]
+            list[str]: List of strings, one per row of the maze.
         """
         lines: list[str] = []
         for row in self.grid:
             line = ""
             for cell in row:
-                hex_value = format(cell, "X")
+                # hex() converts an integer into a hex string.
+                # [2:] removes the prefix '0x'
+                hex_value = hex(cell)[2:].upper()
                 line += hex_value
             lines.append(line)
         return lines
@@ -628,45 +495,9 @@ class MazeGenerator:
         """
         Finds the shortest path from entry to exit using BFS.
 
-        Args:
-            None
-
         Returns:
-            A string representing directions (N, E, S, W).
-            Returns empty string if no path exists.
-
-        Notes:
-        Returns the shortest path from entry to exit
-        as a string of N,E,S,W
-
-        Using BFS(Breadth-First Search)
-        - means check all 1-step moves first
-        - then all 2-step moves etc
-        - uses deque (double-ended queue to add/remove items from front/back)
-        - uses popleft() to remove the leftmost(oldest) item
-        - the above ensure FIFO (first in first out),
-        so oldest node gets explored first, while newer nodes wait in line
-
-        Simple example to illustrate:
-        - from entry position, if all 4 directions are possible,
-        queue will contain:
-        (x1, y1, "N")
-        (x2, y2, "E")
-        (x3, y3, "S")
-        (x4, y4, "W")
-        - pop the oldest one, means removing (x1, y1, "N") from queue,
-        example it's dead end, then queue becomes:
-        (x2, y2, "E")
-        (x3, y3, "S")
-        (x4, y4, "W")
-        - pop the oldest one now (x2, y2, "E") from queue and explore,
-        example we can go to W and S from here, then the queue becomes:
-        (x3, y3, "S")
-        (x4, y4, "W")
-        (x5, y5, "EW")
-        (x6, y6, "ES")
-        - Say x5, y5 is the exit, then we stop at (x5, y5, "EW")
-        and return the path, which is EW
+            str: Path as a sequence of directions ("N", "E", "S", "W").
+                Returns an empty string if no path exists.
         """
         # each tuple means (dx, dy, wall to check, letter to add to path)
         # e.g. (1, 0, E, "E") means move right, check East wall, record "E"
@@ -688,7 +519,6 @@ class MazeGenerator:
         # keep running as long as there are positions to explore
         while queue:
             # takes the oldest item from the queue
-            # this is where BFS is implemented
             x, y, path = queue.popleft()
 
             # if current position is the exit, return path immediately
@@ -696,15 +526,10 @@ class MazeGenerator:
                 return path
 
             # loop through N, E, S, W and move in that direction
-            # 'continue' means skip and go to the next iteration
             for dx, dy, wall, letter in directions:
                 nx, ny = x + dx, y + dy
 
                 # check bounds, skip if outside grid / invalid position
-                # nx >= 0 means not left of the maze
-                # nx < self.width means not past the right edge
-                # ny >= 0 means not above the maze
-                # ny < self.height means not below the maze
                 if not (0 <= nx < self.width and 0 <= ny < self.height):
                     continue
 
@@ -728,29 +553,19 @@ class MazeGenerator:
 
     def write_output(self, filename: str) -> None:
         """
-        Write the generated maze and metadata to a file.
+        Writes the maze and metadata to a file.
 
-        The output file contains:
-            - Hexadecimal maze grid representation
-            - Entry coordinate
-            - Exit coordinate
-            - Shortest path string (if exists)
-
-        File format example:
-            <hex grid lines>
-
-            (entry_x, entry_y)
-            (exit_x, exit_y)
-            <path string>
+        Output format:
+            - Hex grid
+            - Entry coordinates
+            - Exit coordinates
+            - Shortest path
 
         Args:
             filename (str): Output file path.
-            maze (MazeGenerator): Generated maze instance.
-            entry (tuple[int, int]): Entry coordinate (x, y).
-            exit (tuple[int, int]): Exit coordinate (x, y).
 
-        Returns:
-            None
+        Raises:
+            MazeError: If the file cannot be written.
         """
         path = self.find_shortest_path()
         try:
@@ -766,6 +581,13 @@ class MazeGenerator:
             raise MazeError(f"Failed to write output file: {e}")
 
     def get_maze_info(self) -> dict[str, Any]:
+        """
+        Returns basic maze metadata.
+
+        Returns:
+            dict[str, Any]: Dictionary containing grid, entry, exit,
+                width, and height.
+        """
         return {
             "grid": self.grid,
             "entry": self.entry,
