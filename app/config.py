@@ -1,5 +1,12 @@
 from typing import Any
 
+"""
+Configuration parsing and validation utilities.
+
+Provides functions to read a config file, validate its structure,
+and convert raw string values into typed Python values.
+"""
+
 
 class ConfigError(Exception):
     """
@@ -13,17 +20,17 @@ class ConfigError(Exception):
 
 def parse_int(value: str, name: str) -> int:
     """
-    Convert a string value into an integer.
+    Parse a string into an integer.
 
     Args:
-        value (str): The string to convert.
-        name (str): Name of the config field (used in error messages).
+        value (str): Value to parse.
+        name (str): Field name used in error messages.
 
     Returns:
-        int: Parsed integer value.
+        int: Parsed integer.
 
     Raises:
-        ConfigError: If value is not a valid integer.
+        ConfigError: If the value is not a valid integer.
     """
     try:
         return int(value)
@@ -33,16 +40,16 @@ def parse_int(value: str, name: str) -> int:
 
 def parse_tuple(value: str, name: str) -> tuple[int, int]:
     """
-    Parse a string into a tuple of two integers (x, y).
+    Parse a string into an (x, y) integer tuple.
 
     Expected format: "x,y"
 
     Args:
         value (str): Input string.
-        name (str): Config key name for error messages.
+        name (str): Field name used in error messages.
 
     Returns:
-        tuple[int, int]: Parsed coordinate pair.
+        tuple[int, int]: Parsed coordinate tuple.
 
     Raises:
         ConfigError: If format is invalid or values are not integers.
@@ -60,19 +67,19 @@ def parse_tuple(value: str, name: str) -> tuple[int, int]:
 
 def parse_bool(value: str, name: str) -> bool:
     """
-    Parse a boolean-like string into a Python boolean.
+    Parse a boolean string.
 
-    Accepts: true/false, 1/0, yes/no (case insensitive)
+    Accepted values: true/false, 1/0, yes/no (case-insensitive).
 
     Args:
         value (str): Input string.
-        name (str): Config key name.
+        name (str): Field name used in error messages.
 
     Returns:
         bool: Parsed boolean value.
 
     Raises:
-        ConfigError: If value is not a valid boolean representation.
+        ConfigError: If value is not a valid boolean.
     """
     if value is None or value == "":
         raise ConfigError(f"{name} must be true/false")
@@ -86,14 +93,14 @@ def parse_bool(value: str, name: str) -> bool:
 
 def parse_seed(value: str | None, name: str) -> int | None:
     """
-    Parse optional seed value.
+    Parse an optional integer seed value.
 
     Args:
-        value (str | None): Seed value (string or None).
-        name (str): Config key name.
+        value (str): Seed string or None.
+        name (str): Field name used in error messages.
 
     Returns:
-        int | None: Parsed seed or None if not provided.
+        int | None: Parsed integer seed, or None if not provided.
     """
     if value is None or value == "":
         return None
@@ -106,11 +113,11 @@ def parse_algo(value: str | None, name: str) -> str:
     Parse maze generation algorithm.
 
     Args:
-        value (str | None): Algorithm string.
-        name (str): Config key name.
+        value (str): Algorithm name ("dfs" or "prim").
+        name (str): Field name used in error messages.
 
     Returns:
-        str: 'dfs' or 'prim'
+        str: Normalized algorithm name.
 
     Raises:
         ConfigError: If algorithm is invalid.
@@ -128,17 +135,15 @@ def parse_output(value: str, name: str) -> str:
     """
     Validate output filename.
 
-    Ensures file ends with .txt extension.
-
     Args:
         value (str): Output filename.
-        name (str): Config key name.
+        name (str): Field name used in error messages.
 
     Returns:
-        str: Valid filename.
+        str: Validated filename.
 
     Raises:
-        ConfigError: If filename is invalid.
+        ConfigError: If filename does not end with .txt.
     """
     if not value.endswith(".txt"):
         raise ConfigError(f"{name} must be a txt file")
@@ -147,18 +152,19 @@ def parse_output(value: str, name: str) -> str:
 
 def file_validator(filename: str) -> dict[str, str]:
     """
-    Validate and parse raw configuration file into a dictionary.
+    Validate and parse a configuration file.
 
-    - Removes comments and empty lines
-    - Ensures required keys exist
-    - Validates no duplicate keys
-    - Ensures only allowed keys are used
+    Performs:
+        - Comment removal
+        - Duplicate key detection
+        - Required key validation
+        - Unknown key detection
 
     Args:
         filename (str): Path to config file.
 
     Returns:
-        dict[str, str]: Raw config key-value pairs.
+        dict[str, str]: Raw configuration key-value pairs.
 
     Raises:
         ConfigError: If file is invalid or missing required fields.
@@ -198,15 +204,13 @@ def file_validator(filename: str) -> dict[str, str]:
 
 def read_config(filename: str) -> dict[str, Any]:
     """
-    Read and fully parse configuration file into typed values.
-
-    Performs type conversions.
+    Parse configuration file into typed values.
 
     Args:
         filename (str): Path to config file.
 
     Returns:
-        dict[str, Any]: Fully parsed configuration.
+        dict[str, Any]: Parsed configuration dictionary.
     """
     raw = file_validator(filename)
 
@@ -237,12 +241,12 @@ def set_algorithm(
         toggle_algorithm: str
 ) -> None:
     """
-    Toggle maze generation algorithm in config file.
+    Update maze generation algorithm in config file.
 
     Args:
         filename (str): Path to config file.
         current_algorithm (str): Current algorithm name.
-        toggle_algorithm (str): New algorithm to switch to.
+        toggle_algorithm (str): New algorithm value.
 
     Raises:
         ConfigError: If file update fails.
