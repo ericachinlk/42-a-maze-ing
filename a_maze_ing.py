@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""
-Main entry point for the A-Maze-ing project.
 
-This module provides a CLI interface for generating, displaying,
-and interacting with a maze generator system.
+"""
+Entry point for the A-Maze-ing CLI application.
+
+This module runs the interactive command-line interface for generating
+and controlling the maze system, including configuration loading,
+maze generation, rendering, and user interaction.
 """
 
 import sys
@@ -18,6 +20,16 @@ DEBUG = os.getenv("DEBUG") == "1"
 
 
 def show_config(config: dict[str, Any], seed_val: int) -> None:
+    """
+    Display the current maze configuration in a formatted box.
+
+    Args:
+        config (dict[str, Any]): Configuration dictionary.
+        seed_val (int): Active seed used for maze generation.
+
+    Returns:
+        None
+    """
     config["ACTIVE_SEED"] = seed_val
     print("\n┌────── Active Configurations ──────┐")
     for k, v in config.items():
@@ -27,20 +39,23 @@ def show_config(config: dict[str, Any], seed_val: int) -> None:
 
 def main() -> None:
     """
-    Run the main interactive maze application.
+    Entry point for the A-Maze-ing CLI application.
 
     This function:
-    - Loads configuration file from command-line argument
-    - Generates initial maze
-    - Provides an interactive menu for:
-        - regenerating maze
-        - toggling shortest path display
-        - changing wall colours
-        - switching day/night mode
-        - switching algorithms
-        - toggling perfect/non-perfect maze
-        - viewing configuration
-    - Handles runtime errors gracefully
+    - Loads configuration from a file provided via CLI argument
+    - Generates the initial maze
+    - Runs an interactive menu loop allowing the user to:
+        - regenerate maze
+        - toggle shortest path visibility
+        - rotate wall colours
+        - switch between day/night themes
+        - switch maze generation algorithms
+        - toggle perfect/non-perfect maze mode
+        - view configuration details
+        - exit the program
+
+    The function also handles runtime errors from configuration,
+    rendering, and maze generation gracefully.
 
     Returns:
         None
