@@ -109,6 +109,7 @@ def main() -> None:
 
             if choice == "1":
                 seed_val = random.randint(1, 1000)
+                config = read_config(config_file)
                 maze, renderer = generate_maze(
                     config, seed=seed_val, display=True)
 
@@ -127,11 +128,13 @@ def main() -> None:
             elif choice == "5":
                 val = "prim" if config["ALGORITHM"] == "dfs" else "dfs"
                 set_algorithm(config_file, config["ALGORITHM"], val)
+                config = read_config(config_file)
                 maze, renderer = generate_maze(
                     config, seed=seed_val, display=True)
 
             elif choice == "6":
                 toggle_perfect(config_file)
+                config = read_config(config_file)
                 maze, renderer = generate_maze(
                     config, seed=seed_val, display=True)
 
