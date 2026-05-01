@@ -23,8 +23,6 @@ def demo_2(maze: MazeGenerator) -> None:
     maze.generate(renderer=renderer)
     print("\n======= DEMO 2 (WITH DISPLAY) =======")
     print("Default maze display: path shown, day mode, grey wall color")
-    if maze.pattern_error:
-        print(f"\n[WARNING] '42' pattern skipped: {maze.pattern_error}")
 
     print("\nHide path in maze display")
     renderer.display_maze(show_path=False, clear_screen=False)
