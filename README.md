@@ -283,6 +283,28 @@ print(maze.grid)
 print(maze.find_shortest_path())
 ```
 
+CLI rendering is optional and can be plugged in when needed:
+
+```python
+from mazegen import MazeGenerator, CLIRenderer
+
+maze = MazeGenerator(
+    width=20,
+    height=10,
+    entry=(0, 0),
+    exit=(19, 9),
+    seed=42,
+    perfect=True,
+    algorithm="dfs"
+)
+
+renderer = CLIRenderer(maze.get_maze_info())
+maze.generate(renderer=renderer)
+
+print(maze.grid)
+print(maze.find_shortest_path())
+```
+
 ### Reusable components:
 
 * MazeGenerator (core logic)
@@ -290,7 +312,7 @@ print(maze.find_shortest_path())
 * Grid representation (bitmask system)
 * Hex export (to_hex())
 * Output report generation
-* Renderer (optional and pluggable)
+* Pluggable renderer system
 
 ---
 
@@ -339,6 +361,7 @@ print(maze.find_shortest_path())
 * Allow randomized maze sizes
 * Add more edge-case tests
 * Further refine configuration handling
+* Refine 3×3 open-space validation to better support imperfect maze representations
 
 ---
 
