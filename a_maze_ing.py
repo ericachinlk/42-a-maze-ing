@@ -70,6 +70,7 @@ def main() -> None:
         show_path = True
         maze, renderer = generate_maze(config, display=True)
         seed_val = maze.seed
+        color = "\033[38;5;240m"
         show_config_status = False
 
         while True and renderer:
@@ -77,7 +78,7 @@ def main() -> None:
             perfectness = "perfect" if config["PERFECT"] else "non-perfect"
 
             if not show_config_status:
-                renderer.display_maze(show_path=show_path)
+                renderer.display_maze(show_path=show_path, color=color)
             else:
                 show_config(config, seed_val)
                 print("\033[2J\033[H", end="")
@@ -111,14 +112,14 @@ def main() -> None:
                 seed_val = random.randint(1, 1000)
                 config = read_config(config_file)
                 maze, renderer = generate_maze(
-                    config, seed=seed_val, display=True)
+                    config, seed=seed_val, display=True, color=color)
 
             elif choice == "2":
                 show_path = not show_path
                 print("\033[2J\033[H", end="")
 
             elif choice == "3":
-                renderer.rotate_wall_color()
+                color = renderer.rotate_wall_color()
                 print("\033[2J\033[H", end="")
 
             elif choice == "4":
@@ -130,13 +131,13 @@ def main() -> None:
                 set_algorithm(config_file, config["ALGORITHM"], val)
                 config = read_config(config_file)
                 maze, renderer = generate_maze(
-                    config, seed=seed_val, display=True)
+                    config, seed=seed_val, display=True, color=color)
 
             elif choice == "6":
                 toggle_perfect(config_file)
                 config = read_config(config_file)
                 maze, renderer = generate_maze(
-                    config, seed=seed_val, display=True)
+                    config, seed=seed_val, display=True, color=color)
 
             elif choice == "7":
                 show_config_status = True

@@ -5,7 +5,8 @@ from typing import Optional, Any
 def generate_maze(
         config: dict[str, Any],
         seed: Optional[int] = None,
-        display: bool = False
+        display: bool = False,
+        color: str | None = None
 ) -> tuple[MazeGenerator, CLIRenderer | None]:
     """
     Generate a maze from configuration and optionally render it.
@@ -44,7 +45,7 @@ def generate_maze(
     maze_info = maze.get_maze_info()
     if display:
         renderer = CLIRenderer(maze_info)
-        maze.generate(renderer=renderer)
+        maze.generate(renderer=renderer, color=color)
     else:
         renderer = None
         maze.generate()

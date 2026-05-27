@@ -118,18 +118,20 @@ class CLIRenderer:
         """
         self.mode = "night" if self.mode == "day" else "day"
 
-    def rotate_wall_color(self) -> None:
+    def rotate_wall_color(self) -> str:
         """
         Rotates the wall color to the next one
         in the predefined rotation list.
 
         Returns:
-            None
+            str: The ANSI color code for the next wall color.
         """
         self.color_index = (self.color_index + 1) % len(wall_colors_rotation)
         self.wall_color = wall_colors_rotation[self.color_index]
+        return self.wall_color
 
-    def render_maze(self, show_path: bool, final: bool) -> str:
+    def render_maze(self, show_path: bool, final: bool,
+                    color: str | None = None) -> str:
         """
         Renders the maze grid into a string representation.
 
@@ -161,7 +163,7 @@ class CLIRenderer:
         path_cells = self._build_path_cells(entry, path_line)
 
         theme = THEMES.get(self.mode, THEMES["day"])
-        wall_color = self.wall_color
+        wall_color = color if color is not None else self.wall_color
 
         output = []
         for y in range(height + 1):
@@ -212,7 +214,7 @@ class CLIRenderer:
 
         return ("\n".join(output))
 
-    def pre_render(self) -> None:
+    def pre_render(self, color: str | None = None) -> None:
         """
         Renders an intermediate frame of the maze during generation.
 
@@ -222,14 +224,15 @@ class CLIRenderer:
         Returns:
             None
         """
-        self.display_maze(show_path=False, final=False)
+        self.display_maze(show_path=False, final=False, color=color)
         time.sleep(0.03)
 
     def display_maze(
             self,
             show_path: bool = True,
             final: bool = True,
-            clear_screen: bool = True
+            clear_screen: bool = True,
+            color : str | None = None
     ) -> None:
         """
         Prints the rendered maze to the terminal.
@@ -248,7 +251,7 @@ class CLIRenderer:
         """
         if clear_screen:
             print("\033[H\033[J", end="")
-        print(self.render_maze(show_path=show_path, final=final))
+        print(self.render_maze(show_path=show_path, final=final, color=color))
         if self.pattern_error:
             print(self.pattern_error)
 

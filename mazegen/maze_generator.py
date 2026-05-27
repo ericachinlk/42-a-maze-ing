@@ -235,7 +235,8 @@ class MazeGenerator:
     def generate(
             self,
             renderer: CLIRenderer | None = None,
-            use_pattern: bool = True
+            use_pattern: bool = True,
+            color: str | None = None
     ) -> None:
         """
         Generates the maze using the selected algorithm.
@@ -262,9 +263,9 @@ class MazeGenerator:
             warning_message = f"\n[WARNING] '42' pattern skipped: {str(e)}"
 
         if self.algorithm == "dfs":
-            self._generate_dfs(visited, renderer=renderer)
+            self._generate_dfs(visited, renderer=renderer, color=color)
         elif self.algorithm == "prim":
-            self._generate_prim(visited, renderer=renderer)
+            self._generate_prim(visited, renderer=renderer, color=color)
 
         # handle PERFECT=False (multiple paths instead of just one)
         if not self.perfect:
@@ -274,7 +275,7 @@ class MazeGenerator:
         if renderer:
             renderer.path = self.find_shortest_path()
             renderer.pattern_error = warning_message
-            renderer.display_maze()
+            renderer.display_maze(color=color)
         else:
             if warning_message:
                 print(warning_message)
@@ -282,7 +283,8 @@ class MazeGenerator:
     def _generate_dfs(
             self,
             visited: list[list[bool]],
-            renderer: CLIRenderer | None = None
+            renderer: CLIRenderer | None = None,
+            color: str | None = None
     ) -> None:
         """
         Generates the maze using Depth-First Search (DFS).
@@ -322,7 +324,7 @@ class MazeGenerator:
                     self.grid[ny][nx] ^= opposite
 
                     if renderer:
-                        renderer.pre_render()
+                        renderer.pre_render(color=color)
 
                     dfs(nx, ny)
 
@@ -333,7 +335,8 @@ class MazeGenerator:
     def _generate_prim(
             self,
             visited: list[list[bool]],
-            renderer: CLIRenderer | None = None
+            renderer: CLIRenderer | None = None,
+            color: str | None = None
     ) -> None:
         """
         Generates the maze using Prim's algorithm.
@@ -384,7 +387,7 @@ class MazeGenerator:
                 self.grid[ny][nx] ^= opposite
 
                 if renderer:
-                    renderer.pre_render()
+                    renderer.pre_render(color=color)
 
                 visited[ny][nx] = True
                 add_walls(nx, ny)
