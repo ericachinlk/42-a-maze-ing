@@ -172,7 +172,6 @@ class CLIRenderer:
         theme = THEMES.get(selected_mode, THEMES["day"])
         wall_color = color if color is not None else self.wall_color
 
-
         output = []
         for y in range(height + 1):
             line = ""
@@ -260,7 +259,8 @@ class CLIRenderer:
         """
         if clear_screen:
             print("\033[H\033[J", end="")
-        print(self.render_maze(show_path=show_path, final=final, color=color, mode=mode))
+        print(self.render_maze(
+            show_path=show_path, final=final, color=color, mode=mode))
         if self.pattern_error:
             print(self.pattern_error)
 

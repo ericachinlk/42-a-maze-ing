@@ -79,7 +79,8 @@ def main() -> None:
             perfectness = "perfect" if config["PERFECT"] else "non-perfect"
 
             if not show_config_status:
-                renderer.display_maze(show_path=show_path, color=color, mode=mode)
+                renderer.display_maze(
+                    show_path=show_path, color=color, mode=mode)
             else:
                 show_config(config, seed_val)
                 print("\033[2J\033[H", end="")

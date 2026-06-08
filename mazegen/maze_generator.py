@@ -401,7 +401,7 @@ class MazeGenerator:
             renderer (CLIRenderer | None): Optional renderer.
         """
         # remove walls of up to 50% of the maze cells
-        extra_removals = (self.width * self.height) // 2
+        extra_removals = (self.width * self.height) // 20
         attempts = 0
         removed = 0
 
@@ -428,7 +428,7 @@ class MazeGenerator:
             # check if the wall exist in the cell, if yes, remove walls
             if self.grid[y][x] & wall:
                 # check if will create 3x3 open area before removing wall
-                if not self._creates_3x3_open_area(x, y):
+                if not self._creates_3x3_open_area(x, y, wall, dx, dy):
                     self.grid[y][x] ^= wall
                     self.grid[y + dy][x + dx] ^= opp
                     removed += 1
@@ -436,45 +436,84 @@ class MazeGenerator:
                     if renderer:
                         renderer.pre_render()
 
-    def _creates_3x3_open_area(self, x: int, y: int) -> bool:
+    def _creates_3x3_open_area(
+            self,
+            x: int,
+            y: int,
+            wall: int,
+            dx: int,
+            dy: int
+    ) -> bool:
         """
-        Checks whether removing a wall would create a fully open 3x3 area.
+        Checks whether removing a specific wall would create
+        a fully open 3x3 area.
+
+        This method simulates the wall removal, checks for resulting
+        3x3 fully-open regions, then reverts the change. This ensures
+        accuracy by evaluating the maze state AFTER the wall removal.
 
         Args:
-            x (int): X-coordinate.
-            y (int): Y-coordinate.
+            x (int): X-coordinate of the cell losing a wall.
+            y (int): Y-coordinate of the cell losing a wall.
+            wall (int): Wall direction being removed (N, E, S, or W).
+            dx (int): X direction of neighbor cell
+                (1 for E, -1 for W, 0 for vertical).
+            dy (int): Y direction of neighbor cell
+                (1 for S, -1 for N, 0 for horizontal).
 
         Returns:
-            bool: True if a 3x3 open area would be created,
+            bool: True if removing the wall would create a 3x3 fully open area,
                 False otherwise.
         """
-        # check top-left corner of possible 3x3 blocks around (x, y)
-        # -2 means look 2 cells up, -1 means look 1 cell up,
-        # 0 means look at current cell
-        # there could be 9 combinations for coord of top left
-        # of a possible 3x3 block
-        for dy in (-2, -1, 0):
-            for dx in (-2, -1, 0):
-                # top-left of a 3x3 block
-                sx, sy = x + dx, y + dy
-                # must stay inside grid
-                if sx < 0 or sy < 0:
-                    continue
-                # x, y + 2 = last cell of the 3x3 block
-                if sx + 2 >= self.width or sy + 2 >= self.height:
-                    continue
+        # Get the neighbor cell coordinates
+        nx, ny = x + dx, y + dy
 
+        # Determine opposite wall using a mapping
+        opposite_wall = {N: S, S: N, E: W, W: E}[wall]
+
+        # Simulate the wall removal (XOR toggles the wall bit)
+        self.grid[y][x] ^= wall
+        self.grid[ny][nx] ^= opposite_wall
+
+        # Check all possible 3x3 blocks that could be affected
+        # The affected region spans around both modified cells
+        min_y = min(y, ny)
+        max_y = max(y, ny)
+        min_x = min(x, nx)
+        max_x = max(x, nx)
+
+        # Check 3x3 blocks that include the modified cells
+        # A 3x3 block starting at (sx,sy) includes (x,y) if:
+        # sx <= x <= sx+2 and sy <= y <= sy+2
+        # Which means: x-2 <= sx <= x and y-2 <= sy <= y
+        # For both cells: min(x,nx)-2 <= sx <= max(x,nx)
+        # and min(y,ny)-2 <= sy <= max(y,ny)
+        for check_y in range(
+            max(0, min_y - 2), min(self.height - 2, max_y + 1)
+        ):
+            for check_x in range(
+                max(0, min_x - 2), min(self.width - 2, max_x + 1)
+            ):
                 open_count = 0
-                # loop through the 3x3 grid
-                for yy in range(sy, sy + 3):
-                    for xx in range(sx, sx + 3):
-                        # a cell is not fully enclosed if not 15
-                        if self.grid[yy][xx] != 15:
+                # Count cells in this 3x3 block that are
+                # COMPLETELY open (all walls removed)
+                for yy in range(check_y, check_y + 3):
+                    for xx in range(check_x, check_x + 3):
+                        # A cell is "completely open" only
+                        # if it has NO walls (value == 0)
+                        if self.grid[yy][xx] == 0:
                             open_count += 1
-                # if all 9 cells has open walls, it's a 3x3 open square
+
+                # If all 9 cells in the 3x3 block are completely open,
+                # revert and return True
                 if open_count == 9:
+                    self.grid[y][x] ^= wall
+                    self.grid[ny][nx] ^= opposite_wall
                     return True
-        # no 3x3 open area found
+
+        # No 3x3 fully open area would be created; revert simulation
+        self.grid[y][x] ^= wall
+        self.grid[ny][nx] ^= opposite_wall
         return False
 
     def to_hex(self) -> list[str]:
