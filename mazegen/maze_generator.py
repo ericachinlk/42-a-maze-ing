@@ -400,7 +400,7 @@ class MazeGenerator:
         Args:
             renderer (CLIRenderer | None): Optional renderer.
         """
-        # remove walls of up to 50% of the maze cells
+        # remove walls of up to 5% of the maze cells
         extra_removals = (self.width * self.height) // 20
         attempts = 0
         removed = 0
