@@ -236,7 +236,8 @@ class MazeGenerator:
             self,
             renderer: CLIRenderer | None = None,
             use_pattern: bool = True,
-            color: str | None = None
+            color: str | None = None,
+            mode: str | None = None
     ) -> None:
         """
         Generates the maze using the selected algorithm.
@@ -275,7 +276,7 @@ class MazeGenerator:
         if renderer:
             renderer.path = self.find_shortest_path()
             renderer.pattern_error = warning_message
-            renderer.display_maze(color=color)
+            renderer.display_maze(color=color, mode=mode)
         else:
             if warning_message:
                 print(warning_message)

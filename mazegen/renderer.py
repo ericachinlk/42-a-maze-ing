@@ -109,14 +109,15 @@ class CLIRenderer:
         self.path: str = ""
         self.pattern_error: str | None = None
 
-    def toggle_mode(self) -> None:
+    def toggle_mode(self) -> str:
         """
         Toggles the display theme mode between 'day' and 'night'.
 
         Returns:
-            None
+            str: The toggled display theme mode.
         """
         self.mode = "night" if self.mode == "day" else "day"
+        return self.mode
 
     def rotate_wall_color(self) -> str:
         """
@@ -130,8 +131,13 @@ class CLIRenderer:
         self.wall_color = wall_colors_rotation[self.color_index]
         return self.wall_color
 
-    def render_maze(self, show_path: bool, final: bool,
-                    color: str | None = None) -> str:
+    def render_maze(
+            self,
+            show_path: bool,
+            final: bool,
+            color: str | None = None,
+            mode: str | None = None
+    ) -> str:
         """
         Renders the maze grid into a string representation.
 
@@ -162,8 +168,10 @@ class CLIRenderer:
         path_cells = set()
         path_cells = self._build_path_cells(entry, path_line)
 
-        theme = THEMES.get(self.mode, THEMES["day"])
+        selected_mode = mode if mode is not None else self.mode
+        theme = THEMES.get(selected_mode, THEMES["day"])
         wall_color = color if color is not None else self.wall_color
+
 
         output = []
         for y in range(height + 1):
@@ -232,7 +240,8 @@ class CLIRenderer:
             show_path: bool = True,
             final: bool = True,
             clear_screen: bool = True,
-            color : str | None = None
+            color: str | None = None,
+            mode: str | None = None
     ) -> None:
         """
         Prints the rendered maze to the terminal.
@@ -251,7 +260,7 @@ class CLIRenderer:
         """
         if clear_screen:
             print("\033[H\033[J", end="")
-        print(self.render_maze(show_path=show_path, final=final, color=color))
+        print(self.render_maze(show_path=show_path, final=final, color=color, mode=mode))
         if self.pattern_error:
             print(self.pattern_error)
 

@@ -71,6 +71,7 @@ def main() -> None:
         maze, renderer = generate_maze(config, display=True)
         seed_val = maze.seed
         color = "\033[38;5;240m"
+        mode = "day"
         show_config_status = False
 
         while True and renderer:
@@ -78,7 +79,7 @@ def main() -> None:
             perfectness = "perfect" if config["PERFECT"] else "non-perfect"
 
             if not show_config_status:
-                renderer.display_maze(show_path=show_path, color=color)
+                renderer.display_maze(show_path=show_path, color=color, mode=mode)
             else:
                 show_config(config, seed_val)
                 print("\033[2J\033[H", end="")
@@ -88,7 +89,7 @@ def main() -> None:
             print("1. Regenerate new maze")
             print("2. Show/hide shortest path from entry to exit")
             print("3. Change maze wall colours")
-            print(f"4. Toggle day/night mode: {renderer.mode}")
+            print(f"4. Toggle day/night mode: {mode}")
             print(f"5. Switch algorithm: {config['ALGORITHM']}")
             print(f"6. Toggle maze loops: {perfectness}")
             print("7. Show configurations")
@@ -123,7 +124,7 @@ def main() -> None:
                 print("\033[2J\033[H", end="")
 
             elif choice == "4":
-                renderer.toggle_mode()
+                mode = renderer.toggle_mode()
                 print("\033[2J\033[H", end="")
 
             elif choice == "5":
